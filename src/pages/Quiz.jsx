@@ -47,6 +47,7 @@ export default function Quiz() {
   const focusViolationRef = useRef(0)
   const focusFailureLockedRef = useRef(false)
   const lastViolationAtRef = useRef(0)
+  const focusLeftRef = useRef(false)
 
   const attempt = searchParams.get('attempt') || '1'
 
@@ -211,6 +212,9 @@ export default function Quiz() {
 
   const handleFocusViolation = useCallback(async (reason) => {
     if (gate !== 'active' || focusFailureLockedRef.current || processingRef.current) return
+    if (focusLeftRef.current) return
+
+    focusLeftRef.current = true
 
     const now = Date.now()
     if (now - lastViolationAtRef.current < 1200) return
@@ -253,12 +257,18 @@ export default function Quiz() {
       if (document.hidden) {
         handleFocusViolation('left the quiz tab')
       } else {
+        focusLeftRef.current = false
         lastViolationAtRef.current = 0
       }
     }
 
     const onWindowBlur = () => {
       handleFocusViolation('left the quiz window')
+    }
+
+    const onWindowFocus = () => {
+      focusLeftRef.current = false
+      lastViolationAtRef.current = 0
     }
 
     const onBeforeUnload = (event) => {
@@ -270,11 +280,13 @@ export default function Quiz() {
 
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('blur', onWindowBlur)
+    window.addEventListener('focus', onWindowFocus)
     window.addEventListener('beforeunload', onBeforeUnload)
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       window.removeEventListener('blur', onWindowBlur)
+      window.removeEventListener('focus', onWindowFocus)
       window.removeEventListener('beforeunload', onBeforeUnload)
     }
   }, [gate, handleFocusViolation])
