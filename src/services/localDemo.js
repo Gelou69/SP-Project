@@ -6,9 +6,9 @@ const defaultState = () => ({
   users: [
     {
       id: 'demo-admin',
-      full_name: 'Admin User',
-      username: 'admin.lawofsines',
-      password: 'lawofsines123',
+      full_name: 'Sammy Malik',
+      username: 'sammy.malik',
+      password: 'admin123',
       birthdate: '1998-01-15',
       role: 'admin',
       account_status: 'active',
