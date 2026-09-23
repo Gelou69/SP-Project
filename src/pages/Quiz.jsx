@@ -50,6 +50,7 @@ export default function Quiz() {
   const focusLeftRef = useRef(false)
 
   const attempt = searchParams.get('attempt') || '1'
+  const activeQuizSessionKey = `quiz-session-${levelNumber}-${attempt}`
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -73,6 +74,46 @@ export default function Quiz() {
     if (!user) return
     load()
   }, [user, load])
+
+  useEffect(() => {
+    if (!user || gate !== 'active' || questions.length === 0) return
+
+    const payload = {
+      levelNumber,
+      attempt,
+      currentIndex,
+      answers,
+      selectedLabel,
+      answerResult,
+      questions,
+      startedAt: startedAtRef.current,
+    }
+
+    sessionStorage.setItem(activeQuizSessionKey, JSON.stringify(payload))
+  }, [activeQuizSessionKey, answerResult, answers, attempt, currentIndex, gate, levelNumber, questions, selectedLabel, user])
+
+  useEffect(() => {
+    if (!user || gate !== 'ready') return
+
+    const saved = sessionStorage.getItem(activeQuizSessionKey)
+    if (!saved) return
+
+    try {
+      const parsed = JSON.parse(saved)
+      if (!parsed || parsed.levelNumber !== levelNumber || parsed.attempt !== attempt) return
+      if (!Array.isArray(parsed.questions) || parsed.questions.length === 0) return
+
+      startedAtRef.current = parsed.startedAt || new Date().toISOString()
+      setQuestions(parsed.questions)
+      setCurrentIndex(parsed.currentIndex || 0)
+      setAnswers(parsed.answers || [])
+      setSelectedLabel(parsed.selectedLabel ?? null)
+      setAnswerResult(parsed.answerResult ?? null)
+      setGate('active')
+    } catch (err) {
+      sessionStorage.removeItem(activeQuizSessionKey)
+    }
+  }, [activeQuizSessionKey, attempt, gate, levelNumber, user])
 
   // seconds remaining for the current question
   const countdown = useCountdown({
@@ -149,6 +190,12 @@ export default function Quiz() {
 
   const startQuiz = useCallback(async () => {
     try {
+      focusViolationRef.current = 0
+      focusFailureLockedRef.current = false
+      focusLeftRef.current = false
+      lastViolationAtRef.current = 0
+      sessionStorage.removeItem(activeQuizSessionKey)
+
       setGate('active')
       startQuizMusic()
       quizMusicRef.current = true
@@ -167,13 +214,14 @@ export default function Quiz() {
       setGate('ready')
       showToast({ type: 'error', title: 'Cannot start quiz', message: err.message })
     }
-  }, [levelNumber, levels, user, showToast, startQuizMusic, stopQuizMusic])
+  }, [activeQuizSessionKey, levelNumber, levels, user, showToast, startQuizMusic, stopQuizMusic])
 
   const finalizeQuiz = useCallback(async (forced = false) => {
     if (gate === 'submitting') return
     setGate('submitting')
     stopQuizMusic()
     quizMusicRef.current = false
+    sessionStorage.removeItem(activeQuizSessionKey)
     try {
       const totalTime = Math.round(
         (new Date().getTime() - new Date(startedAtRef.current).getTime()) / 1000
@@ -253,22 +301,27 @@ export default function Quiz() {
   useEffect(() => {
     if (gate !== 'active') return
 
+    const resetFocusState = () => {
+      focusLeftRef.current = false
+      lastViolationAtRef.current = 0
+    }
+
     const onVisibilityChange = () => {
       if (document.hidden) {
         handleFocusViolation('left the quiz tab')
       } else {
-        focusLeftRef.current = false
-        lastViolationAtRef.current = 0
+        resetFocusState()
       }
     }
 
     const onWindowBlur = () => {
-      handleFocusViolation('left the quiz window')
+      if (document.hidden || !document.hasFocus()) {
+        handleFocusViolation('left the quiz window')
+      }
     }
 
     const onWindowFocus = () => {
-      focusLeftRef.current = false
-      lastViolationAtRef.current = 0
+      resetFocusState()
     }
 
     const onBeforeUnload = (event) => {
