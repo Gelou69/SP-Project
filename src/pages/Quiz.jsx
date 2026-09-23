@@ -46,6 +46,7 @@ export default function Quiz() {
   const quizMusicRef = useRef(false)
   const focusViolationRef = useRef(0)
   const focusFailureLockedRef = useRef(false)
+  const lastViolationAtRef = useRef(0)
 
   const attempt = searchParams.get('attempt') || '1'
 
@@ -211,6 +212,10 @@ export default function Quiz() {
   const handleFocusViolation = useCallback(async (reason) => {
     if (gate !== 'active' || focusFailureLockedRef.current || processingRef.current) return
 
+    const now = Date.now()
+    if (now - lastViolationAtRef.current < 1200) return
+    lastViolationAtRef.current = now
+
     focusViolationRef.current += 1
 
     if (focusViolationRef.current === 1) {
@@ -247,6 +252,8 @@ export default function Quiz() {
     const onVisibilityChange = () => {
       if (document.hidden) {
         handleFocusViolation('left the quiz tab')
+      } else {
+        lastViolationAtRef.current = 0
       }
     }
 
