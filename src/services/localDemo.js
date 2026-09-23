@@ -2,23 +2,34 @@ import { LAW_OF_SINES_LEVELS, LAW_OF_SINES_QUESTIONS } from '../data/lawOfSinesD
 
 const STORAGE_KEY = 'law-of-sines-demo-state'
 
+const DEMO_ADMIN = {
+  id: 'demo-admin',
+  full_name: 'Sammy Malik',
+  username: 'sammy.malik',
+  password: 'admin123',
+  birthdate: '1998-01-15',
+  role: 'admin',
+  account_status: 'active',
+  created_at: new Date().toISOString(),
+}
+
+const normalizeDemoUsers = (users = []) => {
+  const others = (Array.isArray(users) ? users : []).filter((user) => {
+    const username = String(user?.username || '').toLowerCase()
+    return user?.id !== 'demo-admin' && username !== 'sammy.malik' && username !== 'admin.lawofsines'
+  })
+
+  return [DEMO_ADMIN, ...others]
+}
+
+const DEMO_LEVELS = LAW_OF_SINES_LEVELS.map((level) => ({ ...level, is_active: true }))
+
 const defaultState = () => ({
-  users: [
-    {
-      id: 'demo-admin',
-      full_name: 'Sammy Malik',
-      username: 'sammy.malik',
-      password: 'admin123',
-      birthdate: '1998-01-15',
-      role: 'admin',
-      account_status: 'active',
-      created_at: new Date().toISOString(),
-    },
-  ],
+  users: normalizeDemoUsers([]),
   session: null,
   attempts: [],
   questions: LAW_OF_SINES_QUESTIONS,
-  levels: LAW_OF_SINES_LEVELS,
+  levels: DEMO_LEVELS,
 })
 
 export function getDemoState() {
@@ -32,13 +43,19 @@ export function getDemoState() {
 
   try {
     const parsed = JSON.parse(raw)
-    return {
-      users: Array.isArray(parsed.users) ? parsed.users : defaultState().users,
+    const repaired = {
+      users: normalizeDemoUsers(Array.isArray(parsed.users) ? parsed.users : defaultState().users),
       session: parsed.session || null,
       attempts: Array.isArray(parsed.attempts) ? parsed.attempts : [],
       questions: Array.isArray(parsed.questions) && parsed.questions.length ? parsed.questions : LAW_OF_SINES_QUESTIONS,
-      levels: Array.isArray(parsed.levels) && parsed.levels.length ? parsed.levels : LAW_OF_SINES_LEVELS,
+      levels: Array.isArray(parsed.levels) && parsed.levels.length
+        ? parsed.levels.map((level) => ({ ...level, is_active: level.is_active !== false }))
+        : DEMO_LEVELS,
     }
+    if (JSON.stringify(repaired.users) !== JSON.stringify(parsed.users || [])) {
+      saveDemoState(repaired)
+    }
+    return repaired
   } catch {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultState()))
     return defaultState()
@@ -47,8 +64,23 @@ export function getDemoState() {
 
 export function saveDemoState(nextState) {
   if (typeof window === 'undefined') return nextState
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
-  return nextState
+  const normalized = {
+    ...nextState,
+    levels: Array.isArray(nextState.levels)
+      ? nextState.levels.map((level) => ({ ...level, is_active: level.is_active !== false }))
+      : DEMO_LEVELS,
+  }
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized))
+  return normalized
+}
+
+export function setDemoLevelActive(levelId, isActive) {
+  const state = getDemoState()
+  state.levels = state.levels.map((level) =>
+    level.id === levelId ? { ...level, is_active: Boolean(isActive) } : level
+  )
+  saveDemoState(state)
+  return state.levels.find((level) => level.id === levelId) || null
 }
 
 export function getCurrentDemoUser() {
@@ -106,6 +138,10 @@ export function getDemoQuestionById(questionId) {
   return getDemoState().questions.find((question) => question.id === questionId) || null
 }
 
+export function getDemoLevelsForStudent() {
+  return getDemoState().levels.filter((level) => level.is_active !== false)
+}
+
 export function getDemoQuestionsForLevel(levelNumber) {
   return getDemoState().questions.filter((question) => Number(question.level) === Number(levelNumber))
 }
@@ -126,8 +162,9 @@ export function getDemoAttemptsForStudent(studentId) {
 }
 
 export function getLevelProgressForDemoUser(studentId) {
+  const state = getDemoState()
   const attempts = getDemoAttemptsForStudent(studentId)
-  const progress = LAW_OF_SINES_LEVELS.map((level) => {
+  const progress = state.levels.filter((level) => level.is_active !== false).map((level) => {
     const levelAttempts = attempts.filter((attempt) => Number(attempt.level_number) === Number(level.level_number))
     const bestScore = Math.max(0, ...levelAttempts.map((attempt) => Number(attempt.score || 0)))
     const isCompleted = levelAttempts.some((attempt) => Number(attempt.score || 0) >= 100)

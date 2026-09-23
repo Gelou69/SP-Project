@@ -6,6 +6,8 @@ import {
   findDemoUserByUsername,
   createDemoUser,
   updateDemoUser,
+  getDemoState,
+  saveDemoState,
 } from './localDemo'
 
 const EMAIL_DOMAIN = 'gmail.com'
@@ -106,23 +108,30 @@ export async function signIn({ username, password }) {
     const typed = normalizeUsername(username)
     if (!typed) throw new Error('Please enter your username.')
 
-    const user = findDemoUserByUsername(typed)
-    if (!user) {
-      const adminKey = typed.toLowerCase() === 'admin.lawofsines' && password === 'lawofsines123'
-      if (!adminKey) throw new Error('Invalid username or password.')
+    const legacyAdminNames = ['sammy.malik', 'admin.lawofsines']
+    const legacyAdminPasswords = ['admin123', 'lawofsines123']
+
+    if (legacyAdminNames.includes(typed.toLowerCase()) && legacyAdminPasswords.includes(password)) {
       const adminUser = {
         id: 'demo-admin',
-        full_name: 'Admin User',
-        username: 'admin.lawofsines',
-        password: 'lawofsines123',
+        full_name: 'Sammy Malik',
+        username: 'sammy.malik',
+        password: 'admin123',
         birthdate: '1998-01-15',
         role: 'admin',
         account_status: 'active',
         created_at: new Date().toISOString(),
       }
+      const state = getDemoState()
+      state.users = state.users.filter((user) => user.id !== 'demo-admin')
+      state.users.unshift(adminUser)
+      saveDemoState(state)
       setCurrentDemoUser(adminUser.id)
       return { user: { id: adminUser.id }, profile: adminUser }
     }
+
+    const user = findDemoUserByUsername(typed)
+    if (!user) throw new Error('Invalid username or password.')
 
     if (user.password !== password) {
       throw new Error('Invalid username or password.')

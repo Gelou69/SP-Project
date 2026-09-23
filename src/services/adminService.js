@@ -9,6 +9,7 @@ import {
   getLevelProgressForDemoUser,
   getDemoQuestionById,
   saveDemoState,
+  setDemoLevelActive,
 } from './localDemo'
 
 export async function listStudents({ search = '', status = 'all' } = {}) {
@@ -212,7 +213,10 @@ export async function deleteQuestion(questionId) {
 }
 
 export async function listLevels() {
-  if (!isSupabaseConfigured) return LAW_OF_SINES_LEVELS
+  if (!isSupabaseConfigured) {
+    const state = getDemoState()
+    return [...state.levels].sort((a, b) => Number(a.level_number) - Number(b.level_number))
+  }
 
   const { data, error } = await supabase
     .from('levels')
@@ -223,7 +227,10 @@ export async function listLevels() {
 }
 
 export async function toggleLevelActive(levelId, isActive) {
-  if (!isSupabaseConfigured) return { id: levelId, is_active: isActive }
+  if (!isSupabaseConfigured) {
+    const updated = setDemoLevelActive(levelId, isActive)
+    return updated || { id: levelId, is_active: isActive }
+  }
 
   const { data, error } = await supabase.rpc('admin_toggle_level', { p_id: levelId, p_active: isActive })
   if (error) throw new Error(error.message)

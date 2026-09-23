@@ -1,6 +1,6 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { LAW_OF_SINES_LEVELS, LAW_OF_SINES_QUESTIONS } from '../data/lawOfSinesData'
-import { getCurrentDemoUser, getDemoAttemptById, getDemoAttemptsForStudent, getDemoQuestionById, getDemoQuestionsForLevel, getLevelProgressForDemoUser, saveDemoAttempt } from './localDemo'
+import { getCurrentDemoUser, getDemoAttemptById, getDemoAttemptsForStudent, getDemoQuestionById, getDemoQuestionsForLevel, getDemoState, getLevelProgressForDemoUser, saveDemoAttempt } from './localDemo'
 import { getSessionUser } from './authService'
 
 export const QUIZ_TIME_PER_QUESTION = 30
@@ -42,7 +42,8 @@ export function makeAttemptSeed(studentId, levelNumber, attemptSalt) {
 
 export async function getLevels() {
   if (!isSupabaseConfigured) {
-    return LAW_OF_SINES_LEVELS
+    const state = getDemoState()
+    return state.levels.filter((level) => level.is_active !== false)
   }
 
   const { data, error } = await supabase
@@ -57,7 +58,8 @@ export async function getMyProgress() {
   if (!isSupabaseConfigured) {
     const user = getCurrentDemoUser() || (await getSessionUser())
     if (!user) return []
-    return getLevelProgressForDemoUser(user.id)
+    const activeIds = new Set(getDemoState().levels.filter((level) => level.is_active !== false).map((level) => level.id))
+    return getLevelProgressForDemoUser(user.id).filter((progress) => activeIds.has(progress.level_id))
   }
 
   const { data, error } = await supabase.rpc('get_my_progress')
