@@ -63,7 +63,7 @@ export const questions = [
     q: 'A diagram that shows evolutionary relationships based on shared derived characteristics is a ___.',
     a: 'cladogram', b: 'pie chart', c: 'mountain profile', d: 'weather map', correct: 'A' },
 
-  { level: 1, topic: 'Natural Selection', difficulty: 'easy',
+  { level: 1, topic: 'Natural Selection', difficulty: 'easy', image: 'diagram://natural-selection',
     q: 'Individuals that are best suited to their environment are more likely to survive and reproduce. This idea is known as ___.',
     a: 'natural selection', b: 'artificial breeding', c: 'spontaneous generation', d: 'plate tectonics', correct: 'A' },
 
