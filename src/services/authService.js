@@ -14,14 +14,46 @@ const EMAIL_DOMAIN = 'gmail.com'
 const LEGACY_EMAIL_DOMAINS = ['evolutionquiz.com', 'evolution.quiz']
 
 export function normalizeUsername(raw) {
-  const tokens = String(raw || '')
-    .trim()
-    .toLowerCase()
-    .split(/\s+/)
-  if (tokens.length < 2) return String(raw || '').trim().toLowerCase().replace(/\s+/g, '')
+  const trimmed = String(raw || '').trim().toLowerCase()
+  if (!trimmed) return ''
+
+  const tokens = trimmed.split(/\s+/).filter(Boolean)
+  if (tokens.length < 2) return trimmed.replace(/\s+/g, '')
+
   const first = tokens[0]
   const last = tokens[tokens.length - 1]
   return `${last}.${first}`.replace(/[^a-z0-9.]/g, '')
+}
+
+function demoUsernameVariants(raw) {
+  const base = String(raw || '').trim().toLowerCase()
+  if (!base) return []
+
+  const variants = new Set([
+    base,
+    base.replace(/\s+/g, ''),
+    normalizeUsername(base),
+  ])
+
+  if (base.includes('.')) {
+    const [first, last] = base.split('.')
+    if (first && last) {
+      variants.add(`${last}.${first}`)
+      variants.add(`${first} ${last}`)
+    }
+  }
+
+  if (base.includes(' ')) {
+    const parts = base.split(/\s+/)
+    const first = parts[0]
+    const last = parts[parts.length - 1]
+    if (first && last) {
+      variants.add(`${last}.${first}`)
+      variants.add(`${first}.${last}`)
+    }
+  }
+
+  return [...variants].filter(Boolean)
 }
 
 const emailFor = (username, domain = EMAIL_DOMAIN) => `${username.toLowerCase().replace(/\s+/g, '')}@${domain}`
@@ -105,13 +137,14 @@ async function waitForProfile(userId, attempts = 8) {
 
 export async function signIn({ username, password }) {
   if (!isSupabaseConfigured) {
-    const typed = normalizeUsername(username)
-    if (!typed) throw new Error('Please enter your username.')
+    const raw = String(username || '').trim()
+    if (!raw) throw new Error('Please enter your username.')
 
-    const legacyAdminNames = ['sammy.malik', 'admin.lawofsines']
+    const typed = normalizeUsername(raw)
     const legacyAdminPasswords = ['admin123', 'lawofsines123']
+    const adminMatches = demoUsernameVariants(raw).filter((value) => ['sammy.malik', 'admin.lawofsines'].includes(value))
 
-    if (legacyAdminNames.includes(typed.toLowerCase()) && legacyAdminPasswords.includes(password)) {
+    if (adminMatches.length > 0 && legacyAdminPasswords.includes(String(password || ''))) {
       const adminUser = {
         id: 'demo-admin',
         full_name: 'Sammy Malik',
@@ -123,22 +156,24 @@ export async function signIn({ username, password }) {
         created_at: new Date().toISOString(),
       }
       const state = getDemoState()
-      state.users = state.users.filter((user) => user.id !== 'demo-admin')
+      state.users = state.users.filter((user) => user.id !== 'demo-admin' && user.username.toLowerCase() !== 'admin.lawofsines')
       state.users.unshift(adminUser)
       saveDemoState(state)
       setCurrentDemoUser(adminUser.id)
       return { user: { id: adminUser.id }, profile: adminUser }
     }
 
-    const user = findDemoUserByUsername(typed)
-    if (!user) throw new Error('Invalid username or password.')
+    const state = getDemoState()
+    const matchingUser = state.users.find((user) => {
+      const userNames = demoUsernameVariants(user.username)
+      const entered = demoUsernameVariants(raw)
+      return userNames.some((name) => entered.includes(name)) && user.password === String(password || '')
+    })
 
-    if (user.password !== password) {
-      throw new Error('Invalid username or password.')
-    }
+    if (!matchingUser) throw new Error('Invalid username or password.')
 
-    setCurrentDemoUser(user.id)
-    return { user: { id: user.id }, profile: user }
+    setCurrentDemoUser(matchingUser.id)
+    return { user: { id: matchingUser.id }, profile: matchingUser }
   }
 
   let typed = normalizeUsername(username)
