@@ -44,6 +44,8 @@ export default function Quiz() {
   const saltRef = useRef(randomSalt())
   const processingRef = useRef(false)
   const quizMusicRef = useRef(false)
+  const focusViolationRef = useRef(0)
+  const focusFailureLockedRef = useRef(false)
 
   const attempt = searchParams.get('attempt') || '1'
 
@@ -163,7 +165,8 @@ export default function Quiz() {
     }
   }, [levelNumber, levels, user, showToast, startQuizMusic, stopQuizMusic])
 
-  const finalizeQuiz = useCallback(async () => {
+  const finalizeQuiz = useCallback(async (forced = false) => {
+    if (gate === 'submitting') return
     setGate('submitting')
     stopQuizMusic()
     quizMusicRef.current = false
@@ -171,20 +174,101 @@ export default function Quiz() {
       const totalTime = Math.round(
         (new Date().getTime() - new Date(startedAtRef.current).getTime()) / 1000
       )
+      const submissionAnswers = [...answers]
+      if (currentQuestion && !submissionAnswers.some((entry) => entry.questionId === currentQuestion.id)) {
+        submissionAnswers.push({
+          questionId: currentQuestion.id,
+          selectedLabel: selectedLabel ?? null,
+          timeUsed: Math.max(0, QUIZ_TIME_PER_QUESTION - countdown.seconds),
+          isCorrect: false,
+        })
+      }
       const result = await submitQuiz({
         levelNumber,
-        answers,
+        answers: submissionAnswers,
         timeUsed: totalTime,
         startedAt: startedAtRef.current,
       })
       playSfx(result.passed ? 'unlock' : 'complete')
+      if (forced) {
+        showToast({
+          type: 'info',
+          title: 'Quiz auto-failed',
+          message: 'You were removed from the quiz focus. Please try again.',
+          duration: 4000,
+        })
+      }
       navigate(`/results/${result.attempt_id}`, { state: { result } })
     } catch (err) {
       setGate('active')
       showToast({ type: 'error', title: 'Submit failed', message: err.message })
       showToast({ type: 'info', title: 'Retry submitted answers', message: 'The level has been saved, no points were recorded.' })
     }
-  }, [levelNumber, answers, navigate, playSfx, showToast])
+  }, [answers, countdown.seconds, currentQuestion, gate, levelNumber, navigate, playSfx, selectedLabel, showToast, startQuizMusic, stopQuizMusic])
+
+  const handleFocusViolation = useCallback(async (reason) => {
+    if (gate !== 'active' || focusFailureLockedRef.current || processingRef.current) return
+
+    focusViolationRef.current += 1
+
+    if (focusViolationRef.current === 1) {
+      showToast({
+        type: 'info',
+        title: 'First warning',
+        message: 'Please stay focused on this quiz. Switching tabs or closing the page will fail the attempt.',
+      })
+      return
+    }
+
+    if (focusViolationRef.current === 2) {
+      showToast({
+        type: 'info',
+        title: 'Last warning',
+        message: 'This is your final warning. The next tab change or browser close will auto-fail this attempt.',
+      })
+      return
+    }
+
+    focusFailureLockedRef.current = true
+    showToast({
+      type: 'error',
+      title: 'Quiz failed',
+      message: `The quiz was ended because you ${reason}. Please try again.`,
+    })
+    countdown.stop()
+    await finalizeQuiz(true)
+  }, [countdown, finalizeQuiz, gate, showToast])
+
+  useEffect(() => {
+    if (gate !== 'active') return
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        handleFocusViolation('left the quiz tab')
+      }
+    }
+
+    const onWindowBlur = () => {
+      handleFocusViolation('left the quiz window')
+    }
+
+    const onBeforeUnload = (event) => {
+      if (gate !== 'active') return
+      event.preventDefault()
+      event.returnValue = ''
+      handleFocusViolation('closed the website')
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('blur', onWindowBlur)
+    window.addEventListener('beforeunload', onBeforeUnload)
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('blur', onWindowBlur)
+      window.removeEventListener('beforeunload', onBeforeUnload)
+    }
+  }, [gate, handleFocusViolation])
 
   useEffect(() => () => {
     if (quizMusicRef.current) stopQuizMusic()
