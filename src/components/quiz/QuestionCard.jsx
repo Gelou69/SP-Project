@@ -12,6 +12,8 @@ export default function QuestionCard({
   onSelect,
   locked,
 }) {
+  const hasImage = typeof question.image_url === 'string' && question.image_url.trim().length > 0
+
   return (
     <motion.div
       key={question.id}
@@ -30,7 +32,7 @@ export default function QuestionCard({
         </span>
       </div>
 
-      {question.image_url && (
+      {hasImage && (
         <div className="mb-4 mt-2 overflow-hidden rounded-2xl" style={{ minHeight: 140 }}>
           <QuizImage imageUrl={question.image_url} alt={question.question_text} className="h-44 w-full sm:h-52" />
         </div>

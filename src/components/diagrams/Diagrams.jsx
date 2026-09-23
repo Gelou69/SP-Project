@@ -489,8 +489,14 @@ function DiagramFallback({ label }) {
 export default function QuizImage({ imageUrl, alt = 'Educational diagram', className }) {
   const [failed, setFailed] = useState(false)
 
-  if (imageUrl && imageUrl.startsWith('diagram://')) {
-    const key = imageUrl.replace('diagram://', '')
+  const normalizedUrl = typeof imageUrl === 'string' ? imageUrl.trim() : ''
+
+  if (!normalizedUrl) {
+    return null
+  }
+
+  if (normalizedUrl.startsWith('diagram://')) {
+    const key = normalizedUrl.replace('diagram://', '')
     const Diagram = DIAGRAMS[key]
     if (Diagram) {
       return (
@@ -503,11 +509,11 @@ export default function QuizImage({ imageUrl, alt = 'Educational diagram', class
     return <DiagramFallback label={`diagram ${key}`} />
   }
 
-  if (imageUrl && !failed) {
+  if (!failed) {
     return (
       <figure className={className}>
         <img
-          src={imageUrl}
+          src={normalizedUrl}
           alt={alt}
           loading="lazy"
           onError={() => setFailed(true)}
