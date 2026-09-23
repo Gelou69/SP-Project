@@ -98,9 +98,9 @@ export default function Dashboard() {
                 key={row.id}
                 row={row}
                 index={idx}
-                onPlay={() => {
+                onPlay={(type) => {
                   playSfx('click')
-                  navigate(`/quiz/${row.level_number}`)
+                  navigate(`/quiz/${row.level_number}?type=${type}`)
                 }}
               />
             ))}
@@ -258,22 +258,26 @@ function LevelCard({ row, index, onPlay }) {
             <Lock className="h-3 w-3" /> Locked
           </Badge>
         )}
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <Button
           size="sm"
-          variant={isUnlocked ? (isCompleted ? 'outline' : 'success') : 'outline'}
+          variant={isUnlocked ? 'success' : 'outline'}
           disabled={!isUnlocked}
-          onClick={onPlay}
-          aria-label={isUnlocked ? `Play Level ${row.level_number}` : `Level ${row.level_number} locked`}
+          onClick={() => onPlay('pretest')}
+          aria-label={isUnlocked ? `Start pre-test for Level ${row.level_number}` : `Level ${row.level_number} locked`}
         >
-          {isUnlocked ? (
-            <>
-              <Play className="h-3.5 w-3.5" /> {isCompleted ? 'Review' : 'Play'}
-            </>
-          ) : (
-            <>
-              <Lock className="h-3.5 w-3.5" /> 100/100
-            </>
-          )}
+          <Play className="h-3.5 w-3.5" /> Pre-test
+        </Button>
+        <Button
+          size="sm"
+          variant={isUnlocked ? 'outline' : 'outline'}
+          disabled={!isUnlocked}
+          onClick={() => onPlay('posttest')}
+          aria-label={isUnlocked ? `Start post-test for Level ${row.level_number}` : `Level ${row.level_number} locked`}
+        >
+          <Play className="h-3.5 w-3.5" /> Post-test
         </Button>
       </div>
 

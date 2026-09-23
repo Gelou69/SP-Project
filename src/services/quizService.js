@@ -124,7 +124,9 @@ export async function buildQuiz({ levelNumber, levels, studentId, attemptSalt })
   return { level, questions: orderedQuestions }
 }
 
-export async function submitQuiz({ levelNumber, answers, timeUsed, startedAt }) {
+export async function submitQuiz({ levelNumber, answers, timeUsed, startedAt, assessmentType = 'pretest' }) {
+  const normalizedAssessmentType = assessmentType === 'posttest' ? 'posttest' : 'pretest'
+
   if (!isSupabaseConfigured) {
     const user = getCurrentDemoUser()
     if (!user) throw new Error('You must be signed in to submit quiz answers.')
@@ -145,7 +147,7 @@ export async function submitQuiz({ levelNumber, answers, timeUsed, startedAt }) 
       total_questions: total,
       percentage: score,
       passed,
-      assessment_type: 'pretest',
+      assessment_type: normalizedAssessmentType,
       started_at: startedAt || now,
       completed_at: now,
       created_at: now,
@@ -169,6 +171,7 @@ export async function submitQuiz({ levelNumber, answers, timeUsed, startedAt }) 
       total_questions: total,
       percentage: score,
       passed,
+      assessment_type: normalizedAssessmentType,
       completed_at: now,
     }
   }

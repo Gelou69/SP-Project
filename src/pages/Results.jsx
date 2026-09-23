@@ -71,6 +71,8 @@ export default function Results() {
     )
   }
 
+  const assessmentType = result?.assessment_type === 'posttest' ? 'posttest' : 'pretest'
+  const assessmentLabel = assessmentType === 'posttest' ? 'Post-test' : 'Pre-test'
   const passed = Boolean(result.passed)
   const score = result.score ?? 0
   const correct = result.correct_answers ?? 0
@@ -98,7 +100,7 @@ export default function Results() {
             >
               {passed ? <Trophy className="h-10 w-10" /> : <Lock className="h-9 w-9 text-slate-500" />}
             </motion.div>
-            <h1 className="relative mt-4 text-2xl font-extrabold sm:text-3xl">Level {levelNumber} Complete</h1>
+            <h1 className="relative mt-4 text-2xl font-extrabold sm:text-3xl">{assessmentLabel} · Level {levelNumber}</h1>
             <p className="relative mt-1 text-sm opacity-80">{title}</p>
           </div>
 

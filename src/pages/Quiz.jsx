@@ -50,6 +50,8 @@ export default function Quiz() {
   const focusLeftRef = useRef(false)
 
   const attempt = searchParams.get('attempt') || '1'
+  const assessmentType = searchParams.get('type') === 'posttest' ? 'posttest' : 'pretest'
+  const assessmentLabel = assessmentType === 'posttest' ? 'Post-test' : 'Pre-test'
   const activeQuizSessionKey = `quiz-session-${levelNumber}-${attempt}`
 
   const load = useCallback(async () => {
@@ -207,7 +209,7 @@ export default function Quiz() {
       setSelectedLabel(null)
       setAnswerResult(null)
       playSfx('notify')
-      showToast({ type: 'info', title: 'Quiz started!', message: `Level ${levelNumber} · answer all 10 questions for a perfect 100/100.` })
+      showToast({ type: 'info', title: `${assessmentLabel} started!`, message: `Level ${levelNumber} · answer all 10 questions for a perfect 100/100.` })
     } catch (err) {
       stopQuizMusic()
       quizMusicRef.current = false
@@ -240,6 +242,7 @@ export default function Quiz() {
         answers: submissionAnswers,
         timeUsed: totalTime,
         startedAt: startedAtRef.current,
+        assessmentType,
       })
       playSfx(result.passed ? 'unlock' : 'complete')
       if (forced) {
