@@ -60,7 +60,7 @@ export default function Layout() {
               transition={{ type: 'spring', stiffness: 300, damping: 15 }}
               className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-white shadow-lg shadow-sky-300/40 ring-1 ring-sky-200"
             >
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-200 via-blue-100 to-violet-200 text-lg font-black text-sky-700">△</div>
+              <img src="/logo.png" alt="Law of Sines logo" className="h-full w-full object-cover" />
             </motion.div>
             <div className="leading-tight">
               <p className="text-sm font-extrabold text-slate-900 transition-colors group-hover:text-sky-700">
