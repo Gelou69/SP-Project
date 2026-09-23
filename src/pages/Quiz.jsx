@@ -85,6 +85,8 @@ export default function Quiz() {
     },
   })
 
+  const currentQuestion = useMemo(() => questions[currentIndex] || null, [questions, currentIndex])
+
   const advance = useCallback(() => {
     setSelectedLabel(null)
     setAnswerResult(null)
@@ -278,7 +280,6 @@ export default function Quiz() {
 
   const isReady = gate === 'active' && questions.length > 0
   const progressScore = answers.filter((a) => a.isCorrect).length * 10
-  const currentQuestion = questions[currentIndex]
 
   if (loading || gate === 'loading') {
     return (
