@@ -1,15 +1,12 @@
-import { supabase } from './supabase'
+import { supabase, isSupabaseConfigured } from './supabase'
+import { LAW_OF_SINES_LEVELS, LAW_OF_SINES_QUESTIONS } from '../data/lawOfSinesData'
+import { getCurrentDemoUser, getDemoAttemptById, getDemoAttemptsForStudent, getDemoQuestionById, getDemoQuestionsForLevel, getLevelProgressForDemoUser, saveDemoAttempt } from './localDemo'
+import { getSessionUser } from './authService'
 
-/** 30 seconds per question, 10 points each. */
 export const QUIZ_TIME_PER_QUESTION = 30
 export const POINTS_PER_QUESTION = 10
 export const QUESTIONS_PER_LEVEL = 10
 
-/**
- * Deterministic seeded RNG (mulberry32) so that after deriving a seed from
- * student id + attempt + a random session salt the same input always yields
- * the same order, but different students/attempts get different orders.
- */
 function mulberry32(seed) {
   let a = seed >>> 0
   return () => {
@@ -39,13 +36,15 @@ export function shuffleWithSeed(array, seed) {
   return copy
 }
 
-/** Builds a new per-attempt shuffle seed so the same student retries in a new order. */
 export function makeAttemptSeed(studentId, levelNumber, attemptSalt) {
-  const base = hashCode(`${studentId}:${levelNumber}:${attemptSalt}`)
-  return base
+  return hashCode(`${studentId}:${levelNumber}:${attemptSalt}`)
 }
 
 export async function getLevels() {
+  if (!isSupabaseConfigured) {
+    return LAW_OF_SINES_LEVELS
+  }
+
   const { data, error } = await supabase
     .from('levels')
     .select('id, level_number, title, description, is_active')
@@ -55,12 +54,22 @@ export async function getLevels() {
 }
 
 export async function getMyProgress() {
+  if (!isSupabaseConfigured) {
+    const user = getCurrentDemoUser() || (await getSessionUser())
+    if (!user) return []
+    return getLevelProgressForDemoUser(user.id)
+  }
+
   const { data, error } = await supabase.rpc('get_my_progress')
   if (error) throw new Error(error.message)
   return data || []
 }
 
 export async function getQuestionsForLevel(levelId) {
+  if (!isSupabaseConfigured) {
+    return LAW_OF_SINES_QUESTIONS.filter((question) => Number(question.level) === Number(levelId))
+  }
+
   const { data, error } = await supabase.rpc('get_level_questions', {
     p_level_id: levelId,
   })
@@ -68,11 +77,12 @@ export async function getQuestionsForLevel(levelId) {
   return data || []
 }
 
-/**
- * Live per-answer check for instant green/red feedback. The correct
- * answer letter never reaches the browser — only whether a pick was right.
- */
 export async function checkAnswer(questionId, selectedAnswer) {
+  if (!isSupabaseConfigured) {
+    const question = getDemoQuestionById(questionId)
+    return Boolean(question && question.correct_answer === selectedAnswer)
+  }
+
   const { data, error } = await supabase.rpc('check_answer', {
     p_question_id: questionId,
     p_selected_answer: selectedAnswer,
@@ -81,31 +91,26 @@ export async function checkAnswer(questionId, selectedAnswer) {
   return Boolean(data)
 }
 
-/**
- * Loads and orders a quiz for a level.
- *  - questions are shuffled by a seed derived from student id + level + attempt salt
- *  - choices are shuffled per question (correct answer position randomized)
- */
 export async function buildQuiz({ levelNumber, levels, studentId, attemptSalt }) {
   const level = levels.find((l) => l.level_number === levelNumber)
   if (!level) throw new Error('Level not found.')
-  const questions = await getQuestionsForLevel(level.id)
+
+  const questions = isSupabaseConfigured
+    ? await getQuestionsForLevel(level.id)
+    : getDemoQuestionsForLevel(levelNumber)
 
   if (questions.length < QUESTIONS_PER_LEVEL) {
-    throw new Error(`Level ${levelNumber} needs at least ${QUESTIONS_PER_LEVEL} active questions.`)
+    throw new Error(`Level ${levelNumber} needs at least ${QUESTIONS_PER_LEVEL} questions.`)
   }
 
   const seed = makeAttemptSeed(studentId, levelNumber, attemptSalt)
-  const orderedQuestions = shuffleWithSeed(questions, seed).map((q, qi) => {
+  const orderedQuestions = shuffleWithSeed(questions, seed).slice(0, QUESTIONS_PER_LEVEL).map((q, qi) => {
     const pairs = [
       { label: 'A', text: q.choice_a },
       { label: 'B', text: q.choice_b },
       { label: 'C', text: q.choice_c },
       { label: 'D', text: q.choice_d },
     ]
-    // Shuffle the ORDER of the four choices. Each option keeps its original
-    // persisted letter glued to its text, so the letter the student submits
-    // always matches the column submit_quiz re-checks server-side.
     const shuffledChoices = shuffleWithSeed(pairs, seed * 31 + qi * 7 + 13)
     return {
       id: q.id,
@@ -119,12 +124,55 @@ export async function buildQuiz({ levelNumber, levels, studentId, attemptSalt })
   return { level, questions: orderedQuestions }
 }
 
-/**
- * Submits the quiz to the database. The score, pass/fail, attempt number and
- * level unlocking are all computed server-side by the submit_quiz RPC —
- * the client can never forge them.
- */
 export async function submitQuiz({ levelNumber, answers, timeUsed, startedAt }) {
+  if (!isSupabaseConfigured) {
+    const user = getCurrentDemoUser()
+    if (!user) throw new Error('You must be signed in to submit quiz answers.')
+
+    const now = new Date().toISOString()
+    const correct = answers.filter((answer) => answer.isCorrect).length
+    const total = answers.length
+    const score = Math.round((correct / total) * 100)
+    const passed = score >= 100
+    const attempt = {
+      id: `demo-attempt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      student_id: user.id,
+      level_number: Number(levelNumber),
+      level: { level_number: Number(levelNumber), title: LAW_OF_SINES_LEVELS.find((level) => level.level_number === Number(levelNumber))?.title || `Level ${levelNumber}` },
+      score,
+      correct_answers: correct,
+      wrong_answers: total - correct,
+      total_questions: total,
+      percentage: score,
+      passed,
+      assessment_type: 'pretest',
+      started_at: startedAt || now,
+      completed_at: now,
+      created_at: now,
+      answers: answers.map((answer) => ({
+        questionId: answer.questionId,
+        question_id: answer.questionId,
+        selected_answer: answer.selectedLabel,
+        correct_answer: answer.correctAnswer || null,
+        isCorrect: answer.isCorrect,
+        is_correct: answer.isCorrect,
+      })),
+    }
+    saveDemoAttempt(attempt)
+    return {
+      attempt_id: attempt.id,
+      level_number: Number(levelNumber),
+      level: attempt.level,
+      score,
+      correct_answers: correct,
+      wrong_answers: total - correct,
+      total_questions: total,
+      percentage: score,
+      passed,
+      completed_at: now,
+    }
+  }
+
   const payload = answers.map((a, idx) => ({
     question_id: a.questionId,
     selected_answer: a.selectedLabel || null,
@@ -143,6 +191,22 @@ export async function submitQuiz({ levelNumber, answers, timeUsed, startedAt }) 
 }
 
 export async function getAttempt(attemptId) {
+  if (!isSupabaseConfigured) {
+    const attempt = getDemoAttemptById(attemptId)
+    if (!attempt) return null
+    return {
+      ...attempt,
+      level_number: Number(attempt.level_number),
+      level: attempt.level || { level_number: Number(attempt.level_number), title: `Level ${attempt.level_number}` },
+      score: Number(attempt.score || 0),
+      correct_answers: Number(attempt.correct_answers || 0),
+      wrong_answers: Number(attempt.wrong_answers || 0),
+      total_questions: Number(attempt.total_questions || 0),
+      percentage: Number(attempt.percentage || 0),
+      passed: Boolean(attempt.passed),
+    }
+  }
+
   const { data, error } = await supabase
     .from('quiz_attempts')
     .select('*, level:levels(level_number, title)')
@@ -153,6 +217,11 @@ export async function getAttempt(attemptId) {
 }
 
 export async function getAttemptAnswers(attemptId) {
+  if (!isSupabaseConfigured) {
+    const attempt = getDemoAttemptById(attemptId)
+    return Array.isArray(attempt?.answers) ? attempt.answers : []
+  }
+
   const { data, error } = await supabase
     .from('quiz_answers')
     .select('*, question:questions(question_text)')
@@ -163,6 +232,17 @@ export async function getAttemptAnswers(attemptId) {
 }
 
 export async function getMyAttempts(limit = 100) {
+  if (!isSupabaseConfigured) {
+    const user = getCurrentDemoUser() || (await getSessionUser())
+    if (!user) return []
+    return getDemoAttemptsForStudent(user.id)
+      .slice(0, limit)
+      .map((attempt) => ({
+        ...attempt,
+        level: attempt.level || { level_number: Number(attempt.level_number), title: `Level ${attempt.level_number}` },
+      }))
+  }
+
   const { data, error } = await supabase
     .from('quiz_attempts')
     .select('*, level:levels(level_number, title)')
@@ -172,8 +252,13 @@ export async function getMyAttempts(limit = 100) {
   return data || []
 }
 
-/** Only for the quiz start flow: verify the student may access this level. */
 export async function getProgressForLevel(levelId) {
+  if (!isSupabaseConfigured) {
+    const user = getCurrentDemoUser()
+    if (!user) return null
+    return getLevelProgressForDemoUser(user.id).find((progress) => progress.level_id === levelId) || null
+  }
+
   const { data, error } = await supabase
     .from('student_progress')
     .select('*')

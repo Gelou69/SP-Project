@@ -451,6 +451,39 @@ function DiagramPeppered({ className }) {
   )
 }
 
+function DiagramTriangle({ className, variant = 1 }) {
+  const labels = {
+    1: { side: 'b', highlight: '#f43f5e', angle: '∠B' },
+    2: { side: 'a', highlight: '#10b981', angle: '∠A' },
+    3: { side: 'c', highlight: '#8b5cf6', angle: '∠C' },
+    4: { side: 'a', highlight: '#f59e0b', angle: '∠A' },
+    5: { side: 'b', highlight: '#0ea5e9', angle: '∠B' },
+  }
+  const config = labels[variant] || labels[1]
+
+  return (
+    <svg viewBox="0 0 400 220" className={className} role="img" aria-label="Triangle diagram for Law of Sines" preserveAspectRatio="xMidYMid meet">
+      <rect x="0" y="0" width="400" height="220" rx="18" fill="#f8fafc" />
+      <polygon points="80,170 320,170 200,48" fill="#e0f2fe" stroke="#0f172a" strokeWidth="3" />
+      <path d="M 80 170 L 320 170" stroke="#94a3b8" strokeWidth="2" strokeDasharray="6 6" />
+      <path d="M 80 170 L 200 48" stroke="#94a3b8" strokeWidth="2" strokeDasharray="6 6" />
+      <path d="M 200 48 L 320 170" stroke="#94a3b8" strokeWidth="2" strokeDasharray="6 6" />
+      <text x="200" y="30" textAnchor="middle" fontSize="20" fontWeight="700" fill="#0f172a">C</text>
+      <text x="58" y="182" fontSize="20" fontWeight="700" fill="#0f172a">A</text>
+      <text x="336" y="182" fontSize="20" fontWeight="700" fill="#0f172a">B</text>
+      <text x="142" y="128" fontSize="18" fontWeight="700" fill="#334155">a</text>
+      <text x="252" y="128" fontSize="18" fontWeight="700" fill="#334155">b</text>
+      <text x="200" y="190" fontSize="18" fontWeight="700" fill="#334155">c</text>
+      <text x="118" y="140" fontSize="16" fontWeight="700" fill="#0f172a">∠A</text>
+      <text x="267" y="142" fontSize="16" fontWeight="700" fill="#0f172a">∠B</text>
+      <text x="200" y="58" fontSize="16" fontWeight="700" fill="#0f172a">∠C</text>
+      <circle cx={variant === 1 ? 228 : variant === 2 ? 140 : variant === 3 ? 288 : variant === 4 ? 126 : 242} cy={variant === 1 ? 122 : variant === 2 ? 132 : variant === 3 ? 124 : variant === 4 ? 100 : 110} r="10" fill={config.highlight} opacity="0.8" />
+      <text x={variant === 1 ? 246 : variant === 2 ? 156 : variant === 3 ? 306 : variant === 4 ? 142 : 260} y={variant === 1 ? 118 : variant === 2 ? 138 : variant === 3 ? 120 : variant === 4 ? 96 : 106} fontSize="15" fontWeight="700" fill={config.highlight}>{config.side}</text>
+      <text x="188" y="210" textAnchor="middle" fontSize="12" fontWeight="600" fill="#475569">Law of Sines triangle</text>
+    </svg>
+  )
+}
+
 const DIAGRAMS = {
   dna: DiagramDNA,
   fossil: DiagramFossil,
@@ -467,6 +500,12 @@ const DIAGRAMS = {
   archaeopteryx: DiagramArchaeopteryx,
   galapagos: DiagramGalapagos,
   peppered: DiagramPeppered,
+  'triangle-1': (props) => <DiagramTriangle {...props} variant={1} />,
+  'triangle-2': (props) => <DiagramTriangle {...props} variant={2} />,
+  'triangle-3': (props) => <DiagramTriangle {...props} variant={3} />,
+  'triangle-4': (props) => <DiagramTriangle {...props} variant={4} />,
+  'triangle-5': (props) => <DiagramTriangle {...props} variant={5} />,
+  triangle: (props) => <DiagramTriangle {...props} variant={1} />,
 }
 
 function DiagramFallback({ label }) {

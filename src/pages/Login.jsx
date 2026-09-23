@@ -26,20 +26,6 @@ export default function Login() {
     if (user) navigate(from, { replace: true })
   }, [user, navigate, from])
 
-  if (!isSupabaseConfigured) {
-    return (
-      <div className="mx-auto max-w-md py-10 text-center">
-        <div className="rounded-2xl border-2 border-amber-300 bg-amber-50 p-6">
-          <h2 className="text-lg font-bold text-amber-800">Supabase not configured</h2>
-          <p className="mt-2 text-sm text-amber-700">
-            Copy <code>.env.example</code> to <code>.env</code> and fill in{' '}
-            <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_PUBLISHABLE_KEY</code>, then restart the dev server.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   const onSubmit = async (e) => {
     e.preventDefault()
     setError('')
@@ -73,8 +59,8 @@ export default function Login() {
             <div aria-hidden className="absolute inset-0 bg-gradient-to-br from-sky-100 via-white to-emerald-100" />
             <img src="/logo.png" alt="Canicon City National High School" className="relative h-full w-full object-cover" />
           </motion.div>
-          <h1 className="gradient-text mt-4 text-3xl font-extrabold">Evolution Quest</h1>
-          <p className="mt-1 text-sm text-slate-500">Grade 10 Science · Evolution Quiz</p>
+          <h1 className="gradient-text mt-4 text-3xl font-extrabold">LAW OF SINES</h1>
+          <p className="mt-1 text-sm text-slate-500">Grade 10 Mathematics · Trigonometry Practice</p>
         </div>
 
         <form onSubmit={onSubmit} className="glass space-y-4 rounded-3xl p-7 shadow-2xl shadow-sky-200/50">
@@ -84,7 +70,7 @@ export default function Login() {
             label="Username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="e.g. carpio.angelou"
+            placeholder="e.g. santos.maria"
             autoComplete="username"
             required
           />

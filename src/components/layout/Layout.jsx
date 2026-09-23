@@ -60,13 +60,13 @@ export default function Layout() {
               transition={{ type: 'spring', stiffness: 300, damping: 15 }}
               className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-white shadow-lg shadow-sky-300/40 ring-1 ring-sky-200"
             >
-              <img src="/logo.png" alt="" className="h-full w-full object-cover" />
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-200 via-blue-100 to-violet-200 text-lg font-black text-sky-700">△</div>
             </motion.div>
             <div className="leading-tight">
               <p className="text-sm font-extrabold text-slate-900 transition-colors group-hover:text-sky-700">
-                Evolution Quest
+                LAW OF SINES
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Grade 10 Science</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Grade 10 Mathematics</p>
             </div>
           </Link>
 
@@ -122,7 +122,7 @@ export default function Layout() {
       </main>
 
       <footer className="relative z-10 border-t border-white/70 bg-white/60 py-4 text-center text-xs text-slate-400 backdrop-blur">
-        <span className="gradient-text font-semibold">Evolution Quest</span> · Grade 10 Science Quiz · Evidence of Evolution to Common Ancestry
+        <span className="gradient-text font-semibold">LAW OF SINES</span> · Grade 10 Mathematics · Triangle Relationships, Angles, and Applications
       </footer>
     </div>
   )
