@@ -23,12 +23,13 @@ const normalizeDemoUsers = (users = []) => {
 }
 
 const DEMO_LEVELS = LAW_OF_SINES_LEVELS.map((level) => ({ ...level, is_active: true }))
+const DEMO_QUESTIONS = LAW_OF_SINES_QUESTIONS.map((question) => ({ ...question, is_active: question.is_active !== false }))
 
 const defaultState = () => ({
   users: normalizeDemoUsers([]),
   session: null,
   attempts: [],
-  questions: LAW_OF_SINES_QUESTIONS,
+  questions: DEMO_QUESTIONS,
   levels: DEMO_LEVELS,
 })
 
@@ -47,7 +48,9 @@ export function getDemoState() {
       users: normalizeDemoUsers(Array.isArray(parsed.users) ? parsed.users : defaultState().users),
       session: parsed.session || null,
       attempts: Array.isArray(parsed.attempts) ? parsed.attempts : [],
-      questions: Array.isArray(parsed.questions) && parsed.questions.length ? parsed.questions : LAW_OF_SINES_QUESTIONS,
+      questions: Array.isArray(parsed.questions) && parsed.questions.length
+        ? parsed.questions.map((question) => ({ ...question, is_active: question.is_active !== false }))
+        : DEMO_QUESTIONS,
       levels: Array.isArray(parsed.levels) && parsed.levels.length
         ? parsed.levels.map((level) => ({ ...level, is_active: level.is_active !== false }))
         : DEMO_LEVELS,
@@ -66,6 +69,9 @@ export function saveDemoState(nextState) {
   if (typeof window === 'undefined') return nextState
   const normalized = {
     ...nextState,
+    questions: Array.isArray(nextState.questions)
+      ? nextState.questions.map((question) => ({ ...question, is_active: question.is_active !== false }))
+      : DEMO_QUESTIONS,
     levels: Array.isArray(nextState.levels)
       ? nextState.levels.map((level) => ({ ...level, is_active: level.is_active !== false }))
       : DEMO_LEVELS,

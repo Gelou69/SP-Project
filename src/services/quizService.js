@@ -1,6 +1,15 @@
 import { supabase, isSupabaseConfigured } from './supabase'
 import { LAW_OF_SINES_LEVELS, LAW_OF_SINES_QUESTIONS } from '../data/lawOfSinesData'
-import { getCurrentDemoUser, getDemoAttemptById, getDemoAttemptsForStudent, getDemoQuestionById, getDemoQuestionsForLevel, getDemoState, getLevelProgressForDemoUser, saveDemoAttempt } from './localDemo'
+import {
+  getCurrentDemoUser,
+  getDemoAttemptById,
+  getDemoAttemptsForStudent,
+  getDemoQuestionById,
+  getDemoQuestionsForLevel,
+  getDemoState,
+  getLevelProgressForDemoUser,
+  saveDemoAttempt,
+} from './localDemo'
 import { getSessionUser } from './authService'
 
 export const QUIZ_TIME_PER_QUESTION = 30
@@ -69,7 +78,8 @@ export async function getMyProgress() {
 
 export async function getQuestionsForLevel(levelId) {
   if (!isSupabaseConfigured) {
-    return LAW_OF_SINES_QUESTIONS.filter((question) => Number(question.level) === Number(levelId))
+    const state = getDemoState()
+    return state.questions.filter((question) => Number(question.level) === Number(levelId))
   }
 
   const { data, error } = await supabase.rpc('get_level_questions', {

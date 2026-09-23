@@ -115,7 +115,8 @@ export async function deleteStudent(studentId) {
 
 export async function listQuestions({ level = 'all', search = '' } = {}) {
   if (!isSupabaseConfigured) {
-    let data = [...LAW_OF_SINES_QUESTIONS]
+    const state = getDemoState()
+    let data = [...state.questions].map((q) => ({ ...q, is_active: q.is_active !== false }))
     if (level && level !== 'all') data = data.filter((q) => Number(q.level) === Number(level))
     if (search) data = data.filter((q) => q.question_text.toLowerCase().includes(search.toLowerCase()))
     return data
