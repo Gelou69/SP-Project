@@ -173,22 +173,19 @@ export default function Dashboard() {
             <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
               <BookOpen className="h-5 w-5 text-violet-500" /> Study Notes
             </h2>
-            <Badge tone="violet">Per level</Badge>
+            <Badge tone="violet">One video</Badge>
           </div>
-          <div className="space-y-3 p-5">
-            {levelRows.map((row) => (
-              <button
-                key={row.id}
-                onClick={() => openLevelNotes(row.level_number)}
-                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-left transition hover:border-violet-200 hover:bg-violet-50/60"
-              >
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Level {row.level_number}</p>
-                  <p className="text-sm font-bold text-slate-800">{row.title}</p>
-                </div>
-                <BookOpen className="h-4 w-4 text-violet-600" />
-              </button>
-            ))}
+          <div className="p-5">
+            <button
+              onClick={() => openLevelNotes(1)}
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-violet-200 bg-violet-50/80 px-3 py-3 text-left transition hover:border-violet-300 hover:bg-violet-100/80"
+            >
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-violet-500">Lecture video</p>
+                <p className="text-sm font-bold text-slate-800">Watch the main lesson for all levels</p>
+              </div>
+              <BookOpen className="h-4 w-4 text-violet-600" />
+            </button>
           </div>
         </Card>
       </div>

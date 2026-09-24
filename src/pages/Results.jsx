@@ -84,6 +84,7 @@ export default function Results() {
 
   const totalLevels = LAW_OF_SINES_LEVELS.length
   const nextLevel = levelNumber != null ? levelNumber + 1 : 2
+  const lectureVideoUrl = 'https://youtu.be/MmfO1YgzmHI?si=MF-xBK3_Mt3KVHXd'
 
   return (
     <div className="mx-auto max-w-xl py-6">
@@ -209,6 +210,12 @@ export default function Results() {
           </div>
         )}
         <div className="mt-5 flex justify-end gap-3">
+          <Button
+            variant="outline"
+            onClick={() => window.open(lectureVideoUrl, '_blank', 'noopener,noreferrer')}
+          >
+            Study first
+          </Button>
           <Button variant="outline" onClick={() => setReplayModal(false)}>
             {justFinishedNonPerfect ? 'Later' : 'Cancel'}
           </Button>
