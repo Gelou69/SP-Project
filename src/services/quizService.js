@@ -333,18 +333,19 @@ export async function getLevelNotes(levelNumber) {
 
 export async function getLeaderboard(limit = 10) {
   if (!isSupabaseConfigured) {
-    return [
-      { rank: 1, name: 'Ariana', username: 'ariana.quiz', correct_answers: 10, score: 100 },
-      { rank: 2, name: 'Marcus', username: 'marcus.quiz', correct_answers: 10, score: 98 },
-      { rank: 3, name: 'Leah', username: 'leah.quiz', correct_answers: 9, score: 80 },
-      { rank: 4, name: 'Noah', username: 'noah.quiz', correct_answers: 9, score: 89 },
-      { rank: 5, name: 'Jasmine', username: 'jasmine.quiz', correct_answers: 9, score: 88 },
-      { rank: 6, name: 'Daniel', username: 'daniel.quiz', correct_answers: 8, score: 87 },
-      { rank: 7, name: 'Mila', username: 'mila.quiz', correct_answers: 8, score: 85 },
-      { rank: 8, name: 'Owen', username: 'owen.quiz', correct_answers: 8, score: 84 },
-      { rank: 9, name: 'Sofia', username: 'sofia.quiz', correct_answers: 8, score: 83 },
-      { rank: 10, name: 'Lucas', username: 'lucas.quiz', correct_answers: 8, score: 82 },
-    ].slice(0, limit)
+    const demoRows = [
+      { rank: 1, name: 'Ariana', username: 'ariana.quiz', correct_answers: 10, score: 100, highest_level: 1, highest_score: 100 },
+      { rank: 2, name: 'Marcus', username: 'marcus.quiz', correct_answers: 10, score: 98, highest_level: 2, highest_score: 90 },
+      { rank: 3, name: 'Leah', username: 'leah.quiz', correct_answers: 9, score: 80, highest_level: 3, highest_score: 80 },
+      { rank: 4, name: 'Noah', username: 'noah.quiz', correct_answers: 9, score: 89, highest_level: 2, highest_score: 89 },
+      { rank: 5, name: 'Jasmine', username: 'jasmine.quiz', correct_answers: 9, score: 88, highest_level: 2, highest_score: 88 },
+      { rank: 6, name: 'Daniel', username: 'daniel.quiz', correct_answers: 8, score: 87, highest_level: 2, highest_score: 87 },
+      { rank: 7, name: 'Mila', username: 'mila.quiz', correct_answers: 8, score: 85, highest_level: 2, highest_score: 85 },
+      { rank: 8, name: 'Owen', username: 'owen.quiz', correct_answers: 8, score: 84, highest_level: 2, highest_score: 84 },
+      { rank: 9, name: 'Sofia', username: 'sofia.quiz', correct_answers: 8, score: 83, highest_level: 2, highest_score: 83 },
+      { rank: 10, name: 'Lucas', username: 'lucas.quiz', correct_answers: 8, score: 82, highest_level: 2, highest_score: 82 },
+    ]
+    return demoRows.slice(0, limit)
   }
 
   const { data, error } = await supabase.rpc('get_student_leaderboard', { p_limit: limit })
@@ -357,6 +358,8 @@ export async function getLeaderboard(limit = 10) {
     username: row.username,
     correct_answers: Number(row.correct_answers || 0),
     score: Number(row.score || 0),
+    highest_level: Number(row.highest_level || 1),
+    highest_score: Number(row.highest_score || row.score || 0),
   }))
 }
 

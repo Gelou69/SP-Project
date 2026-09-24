@@ -16,12 +16,6 @@ const LEVEL_EMOJI = {
   6: '🌳', 7: '🌿', 8: '🐦', 9: '👨‍👩‍👧', 10: '👑',
 }
 
-const getLevelTargetScore = (levelNumber) => {
-  if (levelNumber === 1) return 100
-  if (levelNumber === 2) return 90
-  return 80
-}
-
 export default function Dashboard() {
   const navigate = useNavigate()
   const { profile } = useAuth()
@@ -162,23 +156,28 @@ export default function Dashboard() {
             {leaderboard.length === 0 ? (
               <div className="px-5 py-8 text-sm text-slate-500">No leaderboard data available yet.</div>
             ) : (
-              leaderboard.map((entry) => (
-                <div key={`${entry.student_id || entry.username || entry.rank}`} className="flex items-center justify-between gap-4 px-5 py-3">
-                  <div className="flex items-center gap-3">
-                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ${entry.rank === 1 ? 'bg-amber-100 text-amber-700' : entry.rank === 2 ? 'bg-slate-200 text-slate-700' : entry.rank === 3 ? 'bg-orange-100 text-orange-700' : 'bg-sky-50 text-sky-700'}`}>
-                      {entry.rank === 1 ? '1st' : entry.rank === 2 ? '2nd' : entry.rank === 3 ? '3rd' : `${entry.rank}th`}
-                    </span>
-                    <div>
-                      <p className="text-sm font-extrabold text-slate-800">{entry.name}</p>
-                      <p className="text-xs text-slate-500">@{entry.username}</p>
+              leaderboard.map((entry) => {
+                const levelBadge = `Lvl ${entry.highest_level ?? 1} - ${(entry.highest_score ?? entry.score ?? 0)}`
+
+                return (
+                  <div key={`${entry.student_id || entry.username || entry.rank}`} className="flex items-center justify-between gap-4 px-5 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ${entry.rank === 1 ? 'bg-amber-100 text-amber-700' : entry.rank === 2 ? 'bg-slate-200 text-slate-700' : entry.rank === 3 ? 'bg-orange-100 text-orange-700' : 'bg-sky-50 text-sky-700'}`}>
+                        {entry.rank === 1 ? '1st' : entry.rank === 2 ? '2nd' : entry.rank === 3 ? '3rd' : `${entry.rank}th`}
+                      </span>
+                      <div>
+                        <p className="text-sm font-extrabold text-slate-800">{entry.name}</p>
+                        <p className="text-xs text-slate-500">@{entry.username}</p>
+                        <p className="text-[11px] font-bold text-violet-600">{levelBadge}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-slate-800">{entry.correct_answers} correct</p>
+                      <p className="text-[11px] font-semibold text-slate-500">{entry.score}/100 score</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-black text-slate-800">{entry.correct_answers} correct</p>
-                    <p className="text-[11px] font-semibold text-slate-500">{entry.score}/100 score</p>
-                  </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </Card>
@@ -331,7 +330,6 @@ function LevelCard({ row, index, onPlay, onNotes }) {
   const pretestAllowed = row.pretest_enabled !== false
   const posttestAllowed = row.posttest_enabled !== false
   const emoji = LEVEL_EMOJI[row.level_number] || '🧬'
-  const targetScore = getLevelTargetScore(row.level_number)
 
   return (
     <motion.div
@@ -395,11 +393,6 @@ function LevelCard({ row, index, onPlay, onNotes }) {
           <ProgressBar value={p.best_score || 0} max={100} tone={isCompleted ? 'green' : 'sky'} className="flex-1" />
           <span className="text-[11px] font-bold text-slate-500">{pct}%</span>
         </div>
-      </div>
-
-      <div className="mt-3 flex items-center justify-between rounded-xl border border-violet-100 bg-violet-50/80 px-2.5 py-2 text-[11px] font-bold text-violet-700">
-        <span>Target</span>
-        <span>{targetScore}/100</span>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2">

@@ -456,25 +456,48 @@ returns table (
   full_name text,
   username text,
   correct_answers int,
-  score int
+  score int,
+  highest_level int,
+  highest_score int
 )
 language sql
 security definer
 set search_path = public
 as $$
-  with student_best as (
+  with student_level_scores as (
     select
       sp.student_id,
       p.full_name,
       p.username,
-      max(sp.best_score) as score,
-      max(qa.correct_answers) as correct_answers
+      l.level_number,
+      sp.best_score,
+      row_number() over (
+        partition by sp.student_id
+        order by l.level_number desc, sp.best_score desc
+      ) as rn
     from public.student_progress sp
+    join public.levels l on l.id = sp.level_id
     join public.profiles p on p.id = sp.student_id
-    left join public.quiz_attempts qa on qa.student_id = sp.student_id
     where p.role = 'student'
       and p.account_status = 'active'
-    group by sp.student_id, p.full_name, p.username
+      and sp.best_score > 0
+  ),
+  student_best as (
+    select
+      s.student_id,
+      s.full_name,
+      s.username,
+      max(s.best_score) as score,
+      max(q.correct_answers) as correct_answers,
+      max(case when s.rn = 1 then s.level_number else 0 end) as highest_level,
+      max(case when s.rn = 1 then s.best_score else 0 end) as highest_score
+    from student_level_scores s
+    left join lateral (
+      select max(a.correct_answers) as correct_answers
+      from public.quiz_attempts a
+      where a.student_id = s.student_id
+    ) q on true
+    group by s.student_id, s.full_name, s.username
   ),
   ranked as (
     select
@@ -483,6 +506,8 @@ as $$
       username,
       coalesce(correct_answers, 0) as correct_answers,
       coalesce(score, 0) as score,
+      coalesce(highest_level, 1) as highest_level,
+      coalesce(highest_score, 0) as highest_score,
       row_number() over (
         order by coalesce(score, 0) desc,
                  coalesce(correct_answers, 0) desc,
@@ -496,7 +521,9 @@ as $$
     full_name,
     username,
     correct_answers,
-    score
+    score,
+    highest_level,
+    highest_score
   from ranked
   where rank_no <= p_limit
   order by rank_no;
