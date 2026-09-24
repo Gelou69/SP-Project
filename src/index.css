@@ -63,8 +63,8 @@ body {
 /* ---------------------------------------------------------------- */
 
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(2deg); }
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.01); }
 }
 
 @keyframes blob {
@@ -118,7 +118,7 @@ body {
 }
 
 .floating-card {
-  animation: float 7s ease-in-out infinite;
+  animation: float 10s ease-in-out infinite;
 }
 
 .student-portal-chip {

@@ -63,38 +63,35 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* greeting */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="portal-panel relative overflow-hidden rounded-[30px] bg-gradient-to-r from-sky-600 via-violet-600 to-emerald-600 p-6 text-white shadow-[0_25px_60px_-20px_rgba(14,165,233,0.5)] sm:p-8">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="portal-panel relative overflow-hidden rounded-[28px] border border-sky-200/80 bg-gradient-to-r from-sky-100 via-sky-50 to-sky-100 p-5 text-slate-800 shadow-[0_12px_26px_-18px_rgba(14,165,233,0.5)] sm:p-6">
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="animate-float absolute left-8 top-4 h-24 w-24 rounded-full bg-white/10 blur-xl" />
-          <div className="animate-float-delay absolute right-16 top-2 h-32 w-32 rounded-full bg-white/10 blur-xl" />
-          <div className="absolute -right-8 -bottom-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_45%)]" />
+          <div className="absolute left-8 top-5 h-14 w-14 rounded-full bg-sky-200/35 blur-xl" />
+          <div className="absolute right-24 top-6 h-16 w-16 rounded-full bg-violet-200/25 blur-xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.7),_transparent_40%)]" />
         </div>
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <span className="student-portal-chip inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-white/80">
-              Student portal
-            </span>
-            <h1 className="mt-3 text-2xl font-extrabold sm:text-3xl">
-              {profile?.full_name?.split(' ')[0] || 'Student'} 👋
-            </h1>
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/80">
-              <span>@{profile?.username}</span>
-              <span>·</span>
-              {profile?.birthdate && <span>{calculateAge(profile.birthdate)} years old</span>}
-              <span>·</span>
-              <span>Level {stats.currentLevel} of 10</span>
-            </p>
-          </div>
-          <div className="flex items-center gap-3 rounded-2xl border border-white/25 bg-white/15 px-5 py-4 shadow-lg shadow-sky-950/20 backdrop-blur">
-            <div className="text-center">
-              <p className="text-2xl font-black">{stats.progressPercent}%</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/70">Complete</p>
+
+        <div className="relative flex items-center justify-between gap-4">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-xl shadow-sm shadow-amber-200/60 ring-1 ring-amber-200/80">
+              👋
             </div>
-            <div className="h-10 w-px bg-white/30" />
-            <div className="text-center">
-              <p className="text-2xl font-black">{stats.completedCount}/10</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-white/70">Levels done</p>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-600">Welcome back</p>
+              <h1 className="truncate text-xl font-extrabold text-slate-900 sm:text-2xl">
+                {profile?.full_name?.split(' ')[0] || 'Student'}
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex w-[220px] shrink-0 items-center justify-center rounded-[22px] border border-slate-200/80 bg-white/75 p-3 shadow-[0_10px_20px_-18px_rgba(15,23,42,0.35)] backdrop-blur-sm">
+            <div className="flex w-full items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Progress</p>
+                <p className="text-sm font-black text-slate-800">{stats.progressPercent}%</p>
+              </div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-violet-500 text-sm font-black text-white shadow-md shadow-sky-200/60">
+                {stats.completedCount}
+              </div>
             </div>
           </div>
         </div>

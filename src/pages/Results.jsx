@@ -74,8 +74,8 @@ export default function Results() {
 
   const assessmentType = result?.assessment_type === 'posttest' ? 'posttest' : 'pretest'
   const assessmentLabel = assessmentType === 'posttest' ? 'Post-test' : 'Pre-test'
-  const passed = Boolean(result.passed)
-  const score = result.score ?? 0
+  const score = Number(result.score ?? result.percentage ?? 0)
+  const passed = Boolean(result.passed ?? score >= PASSING_SCORE)
   const correct = result.correct_answers ?? 0
   const wrong = result.wrong_answers ?? 0
   const total = result.total_questions ?? 10
