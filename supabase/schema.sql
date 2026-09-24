@@ -459,6 +459,7 @@ returns table (
   username text,
   correct_answers int,
   score int,
+  total_score int,
   highest_level int,
   highest_score int,
   level_summary text
@@ -489,6 +490,7 @@ as $$
       username,
       sum(correct_answers_this_level)::int as correct_answers,
       sum(best_score)::int as score,
+      sum(best_score)::int as total_score,
       max(level_number) as highest_level,
       max(best_score) as highest_score,
       string_agg(format('Lvl%s-%s', level_number, best_score), ' ' order by level_number) as level_summary
@@ -502,12 +504,13 @@ as $$
       username,
       coalesce(correct_answers, 0) as correct_answers,
       coalesce(score, 0) as score,
+      coalesce(total_score, 0) as total_score,
       coalesce(highest_level, 1) as highest_level,
       coalesce(highest_score, 0) as highest_score,
       coalesce(level_summary, 'Lvl1-0') as level_summary,
       row_number() over (
         order by coalesce(correct_answers, 0) desc,
-                 coalesce(score, 0) desc,
+                 coalesce(total_score, 0) desc,
                  username asc
       ) as rank_no
     from totals
@@ -519,6 +522,7 @@ as $$
     username,
     correct_answers,
     score,
+    total_score,
     highest_level,
     highest_score,
     level_summary
@@ -526,6 +530,8 @@ as $$
   where rank_no <= p_limit
   order by rank_no;
 $$;
+
+grant execute on function public.get_student_leaderboard(int) to authenticated;
 
 grant execute on function public.get_student_leaderboard(int) to authenticated;
 

@@ -158,6 +158,7 @@ export default function Dashboard() {
             ) : (
               leaderboard.map((entry) => {
                 const levelBadge = entry.level_summary || `Lvl1-${Number(entry.highest_score ?? entry.score ?? 0)}`
+                const totalScore = Number(entry.total_score ?? entry.score ?? 0)
 
                 return (
                   <div key={`${entry.student_id || entry.username || entry.rank}`} className="flex items-center justify-between gap-4 px-5 py-3">
@@ -173,6 +174,7 @@ export default function Dashboard() {
 
                     <div className="ml-auto text-right">
                       <p className="text-[11px] font-bold text-violet-600">{levelBadge}</p>
+                      <p className="text-[10px] font-extrabold text-amber-600">Total: {totalScore}</p>
                     </div>
                   </div>
                 )
