@@ -22,7 +22,12 @@ const normalizeDemoUsers = (users = []) => {
   return [DEMO_ADMIN, ...others]
 }
 
-const DEMO_LEVELS = LAW_OF_SINES_LEVELS.map((level) => ({ ...level, is_active: true }))
+const DEMO_LEVELS = LAW_OF_SINES_LEVELS.map((level) => ({
+  ...level,
+  is_active: true,
+  pretest_enabled: true,
+  posttest_enabled: true,
+}))
 const DEMO_QUESTIONS = LAW_OF_SINES_QUESTIONS.map((question) => ({ ...question, is_active: question.is_active !== false }))
 
 const defaultState = () => ({
@@ -52,7 +57,12 @@ export function getDemoState() {
         ? parsed.questions.map((question) => ({ ...question, is_active: question.is_active !== false }))
         : DEMO_QUESTIONS,
       levels: Array.isArray(parsed.levels) && parsed.levels.length
-        ? parsed.levels.map((level) => ({ ...level, is_active: level.is_active !== false }))
+        ? parsed.levels.map((level) => ({
+            ...level,
+            is_active: level.is_active !== false,
+            pretest_enabled: level.pretest_enabled !== false,
+            posttest_enabled: level.posttest_enabled !== false,
+          }))
         : DEMO_LEVELS,
     }
     if (JSON.stringify(repaired.users) !== JSON.stringify(parsed.users || [])) {
@@ -73,7 +83,12 @@ export function saveDemoState(nextState) {
       ? nextState.questions.map((question) => ({ ...question, is_active: question.is_active !== false }))
       : DEMO_QUESTIONS,
     levels: Array.isArray(nextState.levels)
-      ? nextState.levels.map((level) => ({ ...level, is_active: level.is_active !== false }))
+      ? nextState.levels.map((level) => ({
+          ...level,
+          is_active: level.is_active !== false,
+          pretest_enabled: level.pretest_enabled !== false,
+          posttest_enabled: level.posttest_enabled !== false,
+        }))
       : DEMO_LEVELS,
   }
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized))
@@ -84,6 +99,16 @@ export function setDemoLevelActive(levelId, isActive) {
   const state = getDemoState()
   state.levels = state.levels.map((level) =>
     level.id === levelId ? { ...level, is_active: Boolean(isActive) } : level
+  )
+  saveDemoState(state)
+  return state.levels.find((level) => level.id === levelId) || null
+}
+
+export function setDemoLevelAssessmentAccess(levelId, assessmentType, isEnabled) {
+  const state = getDemoState()
+  const field = assessmentType === 'posttest' ? 'posttest_enabled' : 'pretest_enabled'
+  state.levels = state.levels.map((level) =>
+    level.id === levelId ? { ...level, [field]: Boolean(isEnabled) } : level
   )
   saveDemoState(state)
   return state.levels.find((level) => level.id === levelId) || null

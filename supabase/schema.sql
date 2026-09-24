@@ -29,6 +29,8 @@ create table if not exists public.levels (
   title text not null,
   description text default '',
   is_active boolean not null default true,
+  pretest_enabled boolean not null default true,
+  posttest_enabled boolean not null default true,
   created_at timestamptz not null default now()
 );
 

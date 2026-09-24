@@ -62,8 +62,11 @@ export default function Quiz() {
       setProgress(prog)
       const levelRow = lvlRows.find((l) => l.level_number === levelNumber)
       const progRow = levelRow ? prog.find((p) => p.level_id === levelRow.id) : null
+      const assessmentEnabled = levelRow
+        ? (assessmentType === 'posttest' ? levelRow.posttest_enabled !== false : levelRow.pretest_enabled !== false)
+        : false
       setUnlocked(Boolean(progRow?.is_unlocked))
-      setGate(lvlRows.length && levelRow ? (progRow?.is_unlocked ? 'ready' : 'locked') : 'locked')
+      setGate(lvlRows.length && levelRow ? ((progRow?.is_unlocked && assessmentEnabled) ? 'ready' : 'locked') : 'locked')
     } catch (err) {
       showToast({ type: 'error', title: 'Could not load level', message: err.message })
       setGate('locked')
@@ -352,6 +355,9 @@ export default function Quiz() {
   }, [stopQuizMusic])
 
   const levelMeta = useMemo(() => levels.find((l) => l.level_number === levelNumber), [levels, levelNumber])
+  const assessmentEnabled = levelMeta
+    ? (assessmentType === 'posttest' ? levelMeta.posttest_enabled !== false : levelMeta.pretest_enabled !== false)
+    : true
 
   const isReady = gate === 'active' && questions.length > 0
   const progressScore = answers.filter((a) => a.isCorrect).length * 10
@@ -376,9 +382,11 @@ export default function Quiz() {
           <div aria-hidden className="pulse-ring absolute inset-0 rounded-full bg-rose-300/40" />
           <Lock className="relative h-9 w-9 text-slate-500" />
         </motion.div>
-        <h1 className="mt-5 text-2xl font-extrabold text-slate-900">Level {levelNumber} is locked</h1>
+        <h1 className="mt-5 text-2xl font-extrabold text-slate-900">{assessmentEnabled ? `Level ${levelNumber} is locked` : `${assessmentLabel} is disabled`}</h1>
         <p className="mt-2 max-w-sm text-sm text-slate-600">
-          You need a perfect 100/100 score on Level {levelNumber - 1} to unlock this level.
+          {assessmentEnabled
+            ? `You need a perfect 100/100 score on Level ${levelNumber - 1} to unlock this level.`
+            : `This ${assessmentLabel.toLowerCase()} is currently turned off by the teacher. Please wait until it is enabled.`}
         </p>
         <Button className="mt-6" variant="outline" onClick={() => navigate('/dashboard')}>
           <ArrowLeft className="h-4 w-4" /> Back to Dashboard
@@ -413,7 +421,7 @@ export default function Quiz() {
             </p>
             <p className="group flex items-center justify-between border-b border-slate-100 pb-3 transition-colors hover:bg-slate-50/60 hover:px-2">
               <span>Time per question</span>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-900">30 seconds</span>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-900">60 seconds</span>
             </p>
             <p className="flex items-center justify-between">
               <span>Perfect score (to unlock next)</span>

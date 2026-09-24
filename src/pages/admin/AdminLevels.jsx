@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Layers, CheckCircle2, LockOpen } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { LAW_OF_SINES_LEVELS } from '../../data/lawOfSinesData'
-import { listLevels, toggleLevelActive } from '../../services/adminService'
+import { listLevels, setLevelAssessmentAccess, toggleLevelActive } from '../../services/adminService'
 import { useToast } from '../../contexts/ToastContext'
 import { Badge, Button, Card, PageHeader, Spinner, Toggle, cn } from '../../components/ui'
 
@@ -38,6 +38,26 @@ export default function AdminLevels() {
     }
   }
 
+  const toggleAssessment = async (level, assessmentType, enabled) => {
+    try {
+      await setLevelAssessmentAccess(level.id, assessmentType, enabled)
+      setLevels((rows) => rows.map((l) => {
+        if (l.id !== level.id) return l
+        return {
+          ...l,
+          [assessmentType === 'posttest' ? 'posttest_enabled' : 'pretest_enabled']: enabled,
+        }
+      }))
+      showToast({
+        type: 'success',
+        title: enabled ? `${assessmentType === 'posttest' ? 'Post-test' : 'Pre-test'} enabled` : `${assessmentType === 'posttest' ? 'Post-test' : 'Pre-test'} disabled`,
+        message: `${level.title} ${assessmentType === 'posttest' ? 'post-test' : 'pre-test'} access is now ${enabled ? 'available' : 'hidden'} for students.`,
+      })
+    } catch (err) {
+      showToast({ type: 'error', title: 'Update failed', message: err.message })
+    }
+  }
+
   if (loading) return <Spinner label="Loading levels..." />
 
   return (
@@ -65,6 +85,25 @@ export default function AdminLevels() {
                     {l.is_active ? <><CheckCircle2 className="h-3 w-3" /> Active</> : <><LockOpen className="h-3 w-3" /> Disabled</>}
                   </Badge>
                   <Toggle checked={l.is_active} onChange={(v) => toggle(l, v)} label={`Toggle ${l.title}`} />
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-slate-600">Pre-test access</span>
+                  <Toggle
+                    checked={l.pretest_enabled !== false}
+                    onChange={(v) => toggleAssessment(l, 'pretest', v)}
+                    label={`Toggle pre-test access for ${l.title}`}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold text-slate-600">Post-test access</span>
+                  <Toggle
+                    checked={l.posttest_enabled !== false}
+                    onChange={(v) => toggleAssessment(l, 'posttest', v)}
+                    label={`Toggle post-test access for ${l.title}`}
+                  />
                 </div>
               </div>
             </Card>

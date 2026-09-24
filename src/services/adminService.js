@@ -10,6 +10,7 @@ import {
   getDemoQuestionById,
   saveDemoState,
   setDemoLevelActive,
+  setDemoLevelAssessmentAccess,
 } from './localDemo'
 
 export async function listStudents({ search = '', status = 'all' } = {}) {
@@ -236,6 +237,22 @@ export async function toggleLevelActive(levelId, isActive) {
   const { data, error } = await supabase.rpc('admin_toggle_level', { p_id: levelId, p_active: isActive })
   if (error) throw new Error(error.message)
   return data
+}
+
+export async function setLevelAssessmentAccess(levelId, assessmentType, isEnabled) {
+  if (!isSupabaseConfigured) {
+    const updated = setDemoLevelAssessmentAccess(levelId, assessmentType, isEnabled)
+    return updated || { id: levelId, [assessmentType === 'posttest' ? 'posttest_enabled' : 'pretest_enabled']: isEnabled }
+  }
+
+  const field = assessmentType === 'posttest' ? 'posttest_enabled' : 'pretest_enabled'
+  const { data, error } = await supabase
+    .from('levels')
+    .update({ [field]: isEnabled })
+    .eq('id', levelId)
+    .select()
+  if (error) throw new Error(error.message)
+  return data?.[0]
 }
 
 export async function getAnalyticsOverview() {

@@ -1,8 +1,8 @@
 import { cn } from '../ui'
 import { Clock3 } from 'lucide-react'
 
-/** Circular 30-second countdown ring. Turns red in the final seconds. */
-export default function Timer({ seconds, total = 30, muted = false }) {
+/** Circular countdown ring. Turns red in the final seconds. */
+export default function Timer({ seconds, total = 60, muted = false }) {
   const ratio = Math.max(0, Math.min(1, seconds / total))
   const radius = 34
   const circumference = 2 * Math.PI * radius

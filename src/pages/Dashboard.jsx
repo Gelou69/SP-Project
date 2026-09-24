@@ -134,7 +134,9 @@ export default function Dashboard() {
                     </span>
                     <div>
                       <p className="text-sm font-bold text-slate-800">Level {a.level?.level_number} · {a.level?.title}</p>
-                      <p className="text-xs text-slate-400">{formatDateTime(a.completed_at)}</p>
+                      <p className="text-xs text-slate-400">
+                        {a.assessment_type === 'posttest' ? 'Post-test' : 'Pre-test'} · {formatDateTime(a.completed_at)}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -182,6 +184,8 @@ function LevelCard({ row, index, onPlay }) {
   const isCompleted = p.is_completed
   const isCurrent = isUnlocked && !isCompleted
   const pct = progressPercent(p.best_score || 0)
+  const pretestAllowed = row.pretest_enabled !== false
+  const posttestAllowed = row.posttest_enabled !== false
   const emoji = LEVEL_EMOJI[row.level_number] || '🧬'
 
   return (
@@ -263,19 +267,19 @@ function LevelCard({ row, index, onPlay }) {
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Button
           size="sm"
-          variant={isUnlocked ? 'success' : 'outline'}
-          disabled={!isUnlocked}
+          variant={isUnlocked && pretestAllowed ? 'success' : 'outline'}
+          disabled={!isUnlocked || !pretestAllowed}
           onClick={() => onPlay('pretest')}
-          aria-label={isUnlocked ? `Start pre-test for Level ${row.level_number}` : `Level ${row.level_number} locked`}
+          aria-label={isUnlocked && pretestAllowed ? `Start pre-test for Level ${row.level_number}` : `Pre-test for Level ${row.level_number} is currently disabled`}
         >
           <Play className="h-3.5 w-3.5" /> Pre-test
         </Button>
         <Button
           size="sm"
-          variant={isUnlocked ? 'outline' : 'outline'}
-          disabled={!isUnlocked}
+          variant={isUnlocked && posttestAllowed ? 'outline' : 'outline'}
+          disabled={!isUnlocked || !posttestAllowed}
           onClick={() => onPlay('posttest')}
-          aria-label={isUnlocked ? `Start post-test for Level ${row.level_number}` : `Level ${row.level_number} locked`}
+          aria-label={isUnlocked && posttestAllowed ? `Start post-test for Level ${row.level_number}` : `Post-test for Level ${row.level_number} is currently disabled`}
         >
           <Play className="h-3.5 w-3.5" /> Post-test
         </Button>

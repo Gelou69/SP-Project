@@ -12,9 +12,21 @@ import {
 } from './localDemo'
 import { getSessionUser } from './authService'
 
-export const QUIZ_TIME_PER_QUESTION = 30
+export const QUIZ_TIME_PER_QUESTION = 60
 export const POINTS_PER_QUESTION = 10
 export const QUESTIONS_PER_LEVEL = 10
+
+export function normalizeAssessmentType(value) {
+  return value === 'posttest' ? 'posttest' : 'pretest'
+}
+
+export function isAssessmentEnabled(level, assessmentType) {
+  if (!level) return false
+  if (level.is_active === false) return false
+  const normalized = normalizeAssessmentType(assessmentType)
+  const isEnabled = normalized === 'posttest' ? level.posttest_enabled : level.pretest_enabled
+  return isEnabled !== false
+}
 
 function mulberry32(seed) {
   let a = seed >>> 0
@@ -57,7 +69,7 @@ export async function getLevels() {
 
   const { data, error } = await supabase
     .from('levels')
-    .select('id, level_number, title, description, is_active')
+    .select('id, level_number, title, description, is_active, pretest_enabled, posttest_enabled')
     .order('level_number', { ascending: true })
   if (error) throw new Error(error.message)
   return data || []
@@ -137,7 +149,7 @@ export async function buildQuiz({ levelNumber, levels, studentId, attemptSalt })
 }
 
 export async function submitQuiz({ levelNumber, answers, timeUsed, startedAt, assessmentType = 'pretest' }) {
-  const normalizedAssessmentType = assessmentType === 'posttest' ? 'posttest' : 'pretest'
+  const normalizedAssessmentType = normalizeAssessmentType(assessmentType)
 
   if (!isSupabaseConfigured) {
     const user = getCurrentDemoUser()

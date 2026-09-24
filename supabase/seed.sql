@@ -5,21 +5,23 @@
 -- ============================================================
 
 -- LEVELS ----------------------------------------------
-insert into public.levels (level_number, title, description, is_active) values
-  (1, 'Foundations of Evolution', 'Meet Darwin, fossils, and the basic evidence that life evolves.', true),
-  (2, 'Fossils and Time', 'Explore how fossils and rock layers reveal the history of life.', true),
-  (3, 'Anatomy Uncovered', 'Compare homologous, analogous, and vestigial structures.', true),
-  (4, 'Evidence in DNA and Embryos', 'Molecular biology and embryos confirm evolutionary relationships.', true),
-  (5, 'Natural Selection in Action', 'Watch how populations change when the environment selects traits.', true),
-  (6, 'Trees of Life', 'Read phylogenetic trees to see who is related to whom.', true),
-  (7, 'Cladograms and Classification', 'Analyze shared derived characters to build clades.', true),
-  (8, 'Adaptation and Survival', 'Discover how organisms evolve to fit their environments.', true),
-  (9, 'Evolution in the Modern World', 'From antibiotics to viruses, evolution happens right now.', true),
-  (10, 'Master of Evolution', 'The final challenge: put all evolution ideas together.', true)
+insert into public.levels (level_number, title, description, is_active, pretest_enabled, posttest_enabled) values
+  (1, 'Foundations of Evolution', 'Meet Darwin, fossils, and the basic evidence that life evolves.', true, true, true),
+  (2, 'Fossils and Time', 'Explore how fossils and rock layers reveal the history of life.', true, true, true),
+  (3, 'Anatomy Uncovered', 'Compare homologous, analogous, and vestigial structures.', true, true, true),
+  (4, 'Evidence in DNA and Embryos', 'Molecular biology and embryos confirm evolutionary relationships.', true, true, true),
+  (5, 'Natural Selection in Action', 'Watch how populations change when the environment selects traits.', true, true, true),
+  (6, 'Trees of Life', 'Read phylogenetic trees to see who is related to whom.', true, true, true),
+  (7, 'Cladograms and Classification', 'Analyze shared derived characters to build clades.', true, true, true),
+  (8, 'Adaptation and Survival', 'Discover how organisms evolve to fit their environments.', true, true, true),
+  (9, 'Evolution in the Modern World', 'From antibiotics to viruses, evolution happens right now.', true, true, true),
+  (10, 'Master of Evolution', 'The final challenge: put all evolution ideas together.', true, true, true)
 on conflict (level_number) do update
 set title = excluded.title,
     description = excluded.description,
-    is_active = excluded.is_active;
+    is_active = excluded.is_active,
+    pretest_enabled = excluded.pretest_enabled,
+    posttest_enabled = excluded.posttest_enabled;
 
 -- QUESTIONS (100) --------------------------------------
 insert into public.questions
