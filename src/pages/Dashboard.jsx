@@ -38,7 +38,7 @@ export default function Dashboard() {
       setNotes({
         title: `Level ${levelNumber} Notes`,
         summary: 'Study the key ideas from this level and review your notes before the next attempt.',
-        keyPoints: ['Review previous quiz feedback', 'Revisit the topic summary', 'Try the next level once you reach 90% or better'],
+        keyPoints: ['Review previous quiz feedback', 'Revisit the topic summary', 'Try the next level once you reach 80% or better'],
       })
     }
   }
@@ -417,7 +417,7 @@ function LevelCard({ row, index, onPlay, onNotes }) {
       )}
       {!isUnlocked && (
         <p className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-          <Lock className="h-3.5 w-3.5" /> Reach 90% on the previous level to continue
+          <Lock className="h-3.5 w-3.5" /> Reach 80% on the previous level to continue
         </p>
       )}
       {isCompleted && (

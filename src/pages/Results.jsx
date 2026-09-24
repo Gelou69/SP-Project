@@ -46,7 +46,7 @@ export default function Results() {
   )
 
   // Arriving straight from a finished quiz below the pass threshold → show the
-  // required retake modal for the 90% progression rule.
+  // required retake modal for the 80% progression rule.
   useEffect(() => {
     if (justFinishedNonPerfect && !loading) {
       setReplayModal(true)

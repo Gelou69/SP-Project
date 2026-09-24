@@ -622,7 +622,7 @@ begin
         is_unlocked = excluded.is_unlocked or public.student_progress.is_unlocked,
         updated_at = now();
 
-  -- unlock the NEXT level once the student reaches the 90% pass threshold
+  -- unlock the NEXT level once the student reaches the 80% pass threshold
   if v_passed then
     select l2.id, l2.level_number into v_next_level, v_next_no
       from public.levels l2
