@@ -584,7 +584,7 @@ begin
   end loop;
 
   v_score := v_correct * 10;
-  v_passed := (v_correct = v_total and v_total = 10);
+  v_passed := (v_score >= 80);
 
   select coalesce(max(attempt_number), 0) + 1 into v_attempt_no
     from public.quiz_attempts where student_id = v_uid and level_id = v_level_id;
@@ -622,7 +622,7 @@ begin
         is_unlocked = excluded.is_unlocked or public.student_progress.is_unlocked,
         updated_at = now();
 
-  -- unlock the NEXT level only on a perfect score
+  -- unlock the NEXT level once the student reaches the 90% pass threshold
   if v_passed then
     select l2.id, l2.level_number into v_next_level, v_next_no
       from public.levels l2

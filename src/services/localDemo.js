@@ -198,8 +198,8 @@ export function getLevelProgressForDemoUser(studentId) {
   const progress = state.levels.filter((level) => level.is_active !== false).map((level) => {
     const levelAttempts = attempts.filter((attempt) => Number(attempt.level_number) === Number(level.level_number))
     const bestScore = Math.max(0, ...levelAttempts.map((attempt) => Number(attempt.score || 0)))
-    const isCompleted = levelAttempts.some((attempt) => Number(attempt.score || 0) >= 100)
-    const isUnlocked = level.level_number === 1 || levelAttempts.some((attempt) => Number(attempt.score || 0) >= 100) || level.level_number === 1
+    const isCompleted = levelAttempts.some((attempt) => Number(attempt.score || 0) >= 80)
+    const isUnlocked = level.level_number === 1 || levelAttempts.some((attempt) => Number(attempt.score || 0) >= 80) || level.level_number === 1
     return {
       id: `${studentId}-${level.level_number}`,
       level_id: level.id,

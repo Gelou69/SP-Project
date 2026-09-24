@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight, CheckCircle2, Lock, RotateCcw, Trophy, XCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAudio } from '../contexts/AudioContext'
-import { getAttempt } from '../services/quizService'
+import { getAttempt, PASSING_SCORE } from '../services/quizService'
 import { Button, Card, Modal, Spinner } from '../components/ui'
 import { formatClock } from '../utils/helpers'
 import { LAW_OF_SINES_LEVELS } from '../data/lawOfSinesData'
@@ -45,8 +45,8 @@ export default function Results() {
     location.state?.result && !location.state.result.passed
   )
 
-  // Arriving straight from a finished quiz that was not 100/100 → show the
-  // "Perfect Score Required" modal exactly as required by the game rules.
+  // Arriving straight from a finished quiz below the pass threshold → show the
+  // required retake modal for the 90% progression rule.
   useEffect(() => {
     if (justFinishedNonPerfect && !loading) {
       setReplayModal(true)
@@ -143,7 +143,7 @@ export default function Results() {
                   transition={{ delay: 0.2 }}
                   className="rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 px-5 py-4 shadow-lg shadow-amber-200/60"
                 >
-                  <p className="text-lg font-extrabold text-amber-700">Perfect Score!</p>
+                  <p className="text-lg font-extrabold text-amber-700">Pass Score Achieved!</p>
                   <p className="mt-0.5 text-sm text-amber-700/80">
                     {levelNumber < totalLevels ? `Level ${nextLevel} Unlocked! 🎉` : `You conquered all ${totalLevels} levels! Amazing!`}
                   </p>
@@ -157,7 +157,7 @@ export default function Results() {
                 >
                   <p className="text-lg font-extrabold text-slate-700">Level Locked</p>
                   <p className="mt-0.5 text-sm text-slate-500">
-                    You need a perfect 100/100 score to unlock the next level.
+                    You need a {PASSING_SCORE}/100 score to unlock the next level.
                   </p>
                 </motion.div>
               )}
@@ -188,7 +188,7 @@ export default function Results() {
       <Modal
         open={replayModal}
         onClose={() => setReplayModal(false)}
-        title={passed ? 'Retake Level?' : 'Perfect Score Required'}
+        title={passed ? 'Retake Level?' : `${PASSING_SCORE}/100 Required`}
         size="sm"
       >
         {passed ? (
@@ -203,7 +203,7 @@ export default function Results() {
               <p className="text-sm font-bold text-amber-800">You scored {score}/100</p>
             </div>
             <p className="text-sm text-slate-600">
-              You need to get a perfect score of <strong>100/100</strong> before you can proceed to
+              You need to score <strong>{PASSING_SCORE}/100</strong> before you can proceed to
               Level {nextLevel}.
             </p>
           </div>

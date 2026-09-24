@@ -96,7 +96,7 @@ export default function AdminDashboard() {
         </Card>
 
         <Card>
-          <CardHeader title="Pass Rate per Level" subtitle="Percentage of attempts that were perfect (100/100)" />
+          <CardHeader title="Pass Rate per Level" subtitle="Percentage of attempts that reached 80/100 or higher" />
           <div className="h-64 px-4 py-2">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

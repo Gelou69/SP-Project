@@ -1,12 +1,14 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Award, CheckCircle2, Lock, LockOpen, Play, History, Star, Target, Medal, TrendingUp,
+  Award, BookOpen, CheckCircle2, Lock, LockOpen, Play, History, Star, Target, Medal, TrendingUp, Trophy,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAudio } from '../contexts/AudioContext'
 import useStudentStats from '../hooks/useStudentStats'
-import { Badge, Button, Card, EmptyState, ProgressBar, Spinner } from '../components/ui'
+import { getLeaderboard, getLevelNotes } from '../services/quizService'
+import { Badge, Button, Card, EmptyState, Modal, ProgressBar, Spinner } from '../components/ui'
 import { calculateAge, formatDateTime, progressPercent } from '../utils/helpers'
 
 const LEVEL_EMOJI = {
@@ -19,6 +21,27 @@ export default function Dashboard() {
   const { profile } = useAuth()
   const { playSfx } = useAudio()
   const { levelRows, attempts, loading, error, stats } = useStudentStats()
+  const [leaderboard, setLeaderboard] = useState([])
+  const [notes, setNotes] = useState(null)
+
+  useEffect(() => {
+    getLeaderboard(10)
+      .then((rows) => setLeaderboard(rows))
+      .catch(() => setLeaderboard([]))
+  }, [])
+
+  const openLevelNotes = async (levelNumber) => {
+    try {
+      const noteSet = await getLevelNotes(levelNumber)
+      setNotes(noteSet)
+    } catch (err) {
+      setNotes({
+        title: `Level ${levelNumber} Notes`,
+        summary: 'Study the key ideas from this level and review your notes before the next attempt.',
+        keyPoints: ['Review previous quiz feedback', 'Revisit the topic summary', 'Try the next level once you reach 90% or better'],
+      })
+    }
+  }
 
   if (loading) {
     return (
@@ -102,10 +125,72 @@ export default function Dashboard() {
                   playSfx('click')
                   navigate(`/quiz/${row.level_number}?type=${type}`)
                 }}
+                onNotes={(levelNumber) => {
+                  playSfx('click')
+                  openLevelNotes(levelNumber)
+                }}
               />
             ))}
           </div>
         )}
+      </div>
+
+      <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
+              <Trophy className="h-5 w-5 text-amber-500" /> Top 10 Leaderboard
+            </h2>
+            <Badge tone="amber">Most correct</Badge>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {leaderboard.length === 0 ? (
+              <div className="px-5 py-8 text-sm text-slate-500">No leaderboard data available yet.</div>
+            ) : (
+              leaderboard.map((entry) => (
+                <div key={`${entry.student_id || entry.username || entry.rank}`} className="flex items-center justify-between gap-4 px-5 py-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black ${entry.rank === 1 ? 'bg-amber-100 text-amber-700' : entry.rank === 2 ? 'bg-slate-200 text-slate-700' : entry.rank === 3 ? 'bg-orange-100 text-orange-700' : 'bg-sky-50 text-sky-700'}`}>
+                      {entry.rank === 1 ? '1st' : entry.rank === 2 ? '2nd' : entry.rank === 3 ? '3rd' : `${entry.rank}th`}
+                    </span>
+                    <div>
+                      <p className="text-sm font-extrabold text-slate-800">{entry.name}</p>
+                      <p className="text-xs text-slate-500">@{entry.username}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-black text-slate-800">{entry.correct_answers} correct</p>
+                    <p className="text-[11px] font-semibold text-slate-500">{entry.score}/100 score</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
+              <BookOpen className="h-5 w-5 text-violet-500" /> Study Notes
+            </h2>
+            <Badge tone="violet">Per level</Badge>
+          </div>
+          <div className="space-y-3 p-5">
+            {levelRows.map((row) => (
+              <button
+                key={row.id}
+                onClick={() => openLevelNotes(row.level_number)}
+                className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-left transition hover:border-violet-200 hover:bg-violet-50/60"
+              >
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-slate-400">Level {row.level_number}</p>
+                  <p className="text-sm font-bold text-slate-800">{row.title}</p>
+                </div>
+                <BookOpen className="h-4 w-4 text-violet-600" />
+              </button>
+            ))}
+          </div>
+        </Card>
       </div>
 
       {/* recent attempts */}
@@ -151,6 +236,40 @@ export default function Dashboard() {
           )}
         </Card>
       </div>
+
+      {notes && (
+        <Modal
+          open={Boolean(notes)}
+          onClose={() => setNotes(null)}
+          title={notes.title || 'Level Notes'}
+          size="lg"
+        >
+          <div className="space-y-4">
+            <div className="rounded-2xl bg-gradient-to-r from-violet-50 to-sky-50 p-4">
+              <p className="text-sm font-semibold text-slate-500">Level {notes.level_number || '—'}</p>
+              <p className="mt-1 text-lg font-extrabold text-slate-900">{notes.title}</p>
+              <p className="mt-2 text-sm text-slate-600">{notes.summary}</p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Quick review</p>
+              <p className="mt-2 text-sm text-slate-700">{notes.quickReview || notes.description || 'Review all key ideas before continuing.'}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Key points</p>
+              <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                {(notes.keyPoints || []).map((point) => (
+                  <li key={point} className="flex gap-2">
+                    <span className="mt-1 inline-block h-2 w-2 rounded-full bg-violet-500" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
@@ -178,7 +297,7 @@ function StatCard({ icon: Icon, label, value, tone }) {
   )
 }
 
-function LevelCard({ row, index, onPlay }) {
+function LevelCard({ row, index, onPlay, onNotes }) {
   const p = row.progress
   const isUnlocked = p.is_unlocked
   const isCompleted = p.is_completed
@@ -285,14 +404,20 @@ function LevelCard({ row, index, onPlay }) {
         </Button>
       </div>
 
+      <div className="mt-3">
+        <Button size="sm" variant="outline" className="w-full" onClick={() => onNotes(row.level_number)}>
+          <BookOpen className="h-3.5 w-3.5" /> Lecture Notes
+        </Button>
+      </div>
+
       {isUnlocked && !isCompleted && (
         <p className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-amber-600">
-          <Award className="h-3.5 w-3.5" /> Get a perfect 100/100 to unlock Level {row.level_number + 1}
+          <Award className="h-3.5 w-3.5" /> Score 80/100 to unlock Level {row.level_number + 1}
         </p>
       )}
       {!isUnlocked && (
         <p className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-slate-400">
-          <Lock className="h-3.5 w-3.5" /> Complete the previous level perfectly
+          <Lock className="h-3.5 w-3.5" /> Reach 90% on the previous level to continue
         </p>
       )}
       {isCompleted && (

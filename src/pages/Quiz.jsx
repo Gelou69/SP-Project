@@ -11,6 +11,7 @@ import {
   getLevels,
   getMyProgress,
   submitQuiz,
+  PASSING_SCORE,
   QUIZ_TIME_PER_QUESTION,
 } from '../services/quizService'
 import { useCountdown } from '../hooks/useCountdown'
@@ -227,7 +228,7 @@ export default function Quiz() {
       setSelectedLabel(null)
       setAnswerResult(null)
       playSfx('notify')
-      showToast({ type: 'info', title: `${assessmentLabel} started!`, message: `Level ${levelNumber} · answer all 10 questions for a perfect 100/100.` })
+      showToast({ type: 'info', title: `${assessmentLabel} started!`, message: `Level ${levelNumber} · answer all 10 questions and reach ${PASSING_SCORE}/100 to continue.` })
     } catch (err) {
       stopQuizMusic()
       quizMusicRef.current = false
@@ -395,7 +396,7 @@ export default function Quiz() {
         <h1 className="mt-5 text-2xl font-extrabold text-slate-900">{assessmentEnabled ? `Level ${levelNumber} is locked` : `${assessmentLabel} is disabled`}</h1>
         <p className="mt-2 max-w-sm text-sm text-slate-600">
           {assessmentEnabled
-            ? `You need a perfect 100/100 score on Level ${levelNumber - 1} to unlock this level.`
+            ? `You need a ${PASSING_SCORE}/100 score on Level ${levelNumber - 1} to unlock this level.`
             : `This ${assessmentLabel.toLowerCase()} is currently turned off by the teacher. Please wait until it is enabled.`}
         </p>
         <Button className="mt-6" variant="outline" onClick={() => navigate('/dashboard')}>
@@ -434,8 +435,8 @@ export default function Quiz() {
               <span className="rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-900">60 seconds</span>
             </p>
             <p className="flex items-center justify-between">
-              <span>Perfect score (to unlock next)</span>
-              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-bold text-emerald-700 shadow-sm shadow-emerald-200/60">100 / 100</span>
+              <span>Passing score (to unlock next)</span>
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-bold text-emerald-700 shadow-sm shadow-emerald-200/60">{PASSING_SCORE} / 100</span>
             </p>
             <p className="rounded-xl border border-sky-100 bg-gradient-to-r from-sky-50 to-violet-50 px-4 py-3 text-xs text-sky-700 shadow-sm shadow-sky-100/60">
               Questions and answer choices are shuffled every attempt. Your score and level unlocks are

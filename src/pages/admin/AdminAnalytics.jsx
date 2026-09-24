@@ -75,7 +75,7 @@ export default function AdminAnalytics() {
         </Card>
 
         <Card>
-          <CardHeader title="Pass Rate Trend" subtitle="Perfect-score percentage per level (100/100)" />
+          <CardHeader title="Pass Rate Trend" subtitle="Pass-rate percentage per level (80/100+)" />
           <div className="h-72 px-4 py-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={passData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>

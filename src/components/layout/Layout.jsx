@@ -66,7 +66,8 @@ export default function Layout() {
               <p className="text-sm font-extrabold text-slate-900 transition-colors group-hover:text-sky-700">
                 LAW OF SINES
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Grade 10 Mathematics</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Grade 10 Math Quests</p>
+              <p className="text-[9px] font-medium text-slate-500">Dr. Sahawi S. Malik</p>
             </div>
           </Link>
 

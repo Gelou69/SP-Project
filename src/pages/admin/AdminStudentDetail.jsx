@@ -29,7 +29,7 @@ export default function AdminStudentDetail() {
 
   const performance = useMemo(() => {
     const completed = progress.filter((p) => p.is_completed)
-    const passed = progress.filter((p) => p.best_score === 100)
+    const passed = progress.filter((p) => (p.best_score || 0) >= 80)
     const best = progress.reduce((m, p) => Math.max(m, p.best_score || 0), 0)
     const totalPoints = progress.reduce((sum, p) => sum + (p.best_score || 0), 0)
     const avg = attempts.length ? Math.round(attempts.reduce((sum, a) => sum + a.score, 0) / attempts.length) : 0
@@ -148,7 +148,7 @@ export default function AdminStudentDetail() {
                 <tr key={p.id} className="hover:bg-slate-50/60">
                   <td className="px-5 py-3 font-extrabold text-slate-800">Level {p.level?.level_number} · {p.level?.title}</td>
                   <td className="px-5 py-3">
-                    <span className={cn('font-extrabold', p.best_score === 100 ? 'text-emerald-600' : 'text-slate-800')}>
+                    <span className={cn('font-extrabold', (p.best_score || 0) >= 80 ? 'text-emerald-600' : 'text-slate-800')}>
                       {p.best_score || '—'}
                     </span>
                     {p.best_score > 0 && (
@@ -206,7 +206,7 @@ export default function AdminStudentDetail() {
                     <td className="px-5 py-3 text-emerald-600 font-semibold">{a.correct_answers}</td>
                     <td className="px-5 py-3 text-rose-600 font-semibold">{a.wrong_answers}</td>
                     <td className="px-5 py-3 text-slate-500">{a.time_used != null ? `${a.time_used}s` : '—'}</td>
-                    <td className="px-5 py-3">{a.passed ? <Badge tone="green">100 · Passed</Badge> : <Badge tone="amber">Not passed</Badge>}</td>
+                    <td className="px-5 py-3">{a.passed ? <Badge tone="green">80+ · Passed</Badge> : <Badge tone="amber">Not passed</Badge>}</td>
                   </tr>
                 ))
               )}

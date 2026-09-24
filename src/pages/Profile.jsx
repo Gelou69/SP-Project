@@ -155,7 +155,7 @@ export default function Profile() {
                     <td className="px-5 py-3 font-extrabold text-slate-800">Level {row.level_number}</td>
                     <td className="px-5 py-3 text-slate-600">{row.title}</td>
                     <td className="px-5 py-3">
-                      <span className={`font-extrabold ${p.best_score === 100 ? 'text-emerald-600' : 'text-slate-800'}`}>
+                      <span className={`font-extrabold ${(p.best_score || 0) >= 80 ? 'text-emerald-600' : 'text-slate-800'}`}>
                         {p.best_score || '—'}
                       </span>
                     </td>
@@ -224,7 +224,7 @@ export default function Profile() {
                     <td className="px-5 py-3 font-extrabold text-slate-800">{a.score}</td>
                     <td className="px-5 py-3 text-slate-600">{a.correct_answers}/{a.total_questions}</td>
                     <td className="px-5 py-3">
-                      {a.passed ? <Badge tone="green">100 · Passed</Badge> : <Badge tone="amber">Not passed</Badge>}
+                      {a.passed ? <Badge tone="green">80+ · Passed</Badge> : <Badge tone="amber">Not passed</Badge>}
                     </td>
                     <td className="px-5 py-3 text-right">
                       <Button size="xs" variant="ghost" onClick={() => navigate(`/results/${a.id}`)}>
@@ -242,7 +242,7 @@ export default function Profile() {
       {!isAdmin && (
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
           <Crown className="mr-1 inline h-4 w-4 text-amber-500" />
-          Get a <strong>perfect 100/100</strong> on each level to unlock the next one!
+          Reach <strong>{80}/100</strong> on each level to unlock the next one!
         </div>
       )}
     </div>
