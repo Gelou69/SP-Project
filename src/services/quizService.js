@@ -426,33 +426,17 @@ export async function getLeaderboard(limit = 10) {
     ].slice(0, limit)
   }
 
-  const [{ data: profileRows, error: profileError }, { data: attemptRows, error: attemptError }] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, username'),
-    supabase.from('quiz_attempts').select('student_id, score, correct_answers').order('correct_answers', { ascending: false }).order('score', { ascending: false }).limit(100),
-  ])
+  const { data, error } = await supabase.rpc('get_student_leaderboard', { p_limit: limit })
+  if (error) throw new Error(error.message)
 
-  if (profileError) throw new Error(profileError.message)
-  if (attemptError) throw new Error(attemptError.message)
-
-  const profileMap = Object.fromEntries((profileRows || []).map((profile) => [profile.id, profile]))
-
-  const ranked = (attemptRows || [])
-    .filter((attempt) => profileMap[attempt.student_id])
-    .map((attempt) => ({
-      student_id: attempt.student_id,
-      name: profileMap[attempt.student_id]?.full_name || 'Student',
-      username: profileMap[attempt.student_id]?.username || 'student',
-      correct_answers: Number(attempt.correct_answers || 0),
-      score: Number(attempt.score || 0),
-    }))
-    .sort((a, b) => b.correct_answers - a.correct_answers || b.score - a.score)
-    .slice(0, limit)
-    .map((entry, index) => ({
-      rank: index + 1,
-      ...entry,
-    }))
-
-  return ranked
+  return (data || []).map((row) => ({
+    rank: Number(row.rank_no || 0),
+    student_id: row.student_id,
+    name: row.full_name,
+    username: row.username,
+    correct_answers: Number(row.correct_answers || 0),
+    score: Number(row.score || 0),
+  }))
 }
 
 export async function getAttempt(attemptId) {

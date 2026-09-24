@@ -105,6 +105,8 @@ create index if not exists idx_attempts_student_level on public.quiz_attempts(st
 create index if not exists idx_answers_attempt on public.quiz_answers(attempt_id);
 create index if not exists idx_progress_student on public.student_progress(student_id);
 create index if not exists idx_progress_student_level on public.student_progress(student_id, level_id);
+create unique index if not exists idx_profiles_username_ci
+  on public.profiles (lower(username));
 
 -- ============================================================
 -- HELPERS
@@ -161,7 +163,7 @@ begin
   v_base := regexp_replace(v_base, '[^a-z0-9.]', '', 'g');
   v_candidate := v_base;
   loop
-    if not exists (select 1 from public.profiles where username = v_candidate) then
+    if not exists (select 1 from public.profiles where lower(username) = lower(v_candidate)) then
       return v_candidate;
     end if;
     v_suffix := v_suffix + 1;
@@ -202,7 +204,7 @@ begin
     raise exception 'username must use the format lastname.firstname';
   else
     v_username := v_requested_username;
-    while exists (select 1 from public.profiles where username = v_username) loop
+    while exists (select 1 from public.profiles where lower(username) = lower(v_username)) loop
       v_username := v_requested_username || v_suffix::text;
       v_suffix := v_suffix + 1;
     end loop;
@@ -419,6 +421,55 @@ begin
      order by l.level_number;
 end;
 $$;
+
+-- ============================================================
+-- RPC: get_student_leaderboard
+-- Shows only student accounts and ranks each student by their
+-- best result, not by every individual attempt record.
+-- ============================================================
+
+create or replace function public.get_student_leaderboard(p_limit int default 10)
+returns table (
+  rank_no bigint,
+  student_id uuid,
+  full_name text,
+  username text,
+  correct_answers int,
+  score int
+)
+language sql
+security definer
+set search_path = public
+as $$
+  with ranked as (
+    select
+      a.student_id,
+      p.full_name,
+      p.username,
+      max(a.correct_answers) as correct_answers,
+      max(a.score) as score,
+      row_number() over (
+        order by max(a.correct_answers) desc, max(a.score) desc, p.username asc
+      ) as rank_no
+    from public.quiz_attempts a
+    join public.profiles p on p.id = a.student_id
+    where p.role = 'student'
+      and p.account_status = 'active'
+    group by a.student_id, p.full_name, p.username
+  )
+  select
+    rank_no,
+    student_id,
+    full_name,
+    username,
+    correct_answers,
+    score
+  from ranked
+  where rank_no <= p_limit
+  order by rank_no;
+$$;
+
+grant execute on function public.get_student_leaderboard(int) to authenticated;
 
 -- ============================================================
 -- RPC: get_level_questions

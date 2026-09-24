@@ -173,6 +173,20 @@ export async function signUp({ fullName, username: requestedUsername, birthdate,
   }
 
   const username = normalized
+
+  const { data: existingUsernames, error: usernameCheckError } = await supabase
+    .from('profiles')
+    .select('id')
+    .ilike('username', username)
+    .limit(1)
+
+  if (usernameCheckError) {
+    throw new Error(usernameCheckError.message)
+  }
+  if (existingUsernames && existingUsernames.length > 0) {
+    throw new Error('This username is already in use. Please choose another username.')
+  }
+
   const email = emailFor(username)
   const { data, error } = await supabase.auth.signUp({
     email,
