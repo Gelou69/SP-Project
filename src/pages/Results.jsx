@@ -142,11 +142,13 @@ export default function Results() {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50 px-5 py-4 shadow-lg shadow-amber-200/60"
+                  className="rounded-3xl border-4 border-amber-300 bg-gradient-to-r from-amber-300 via-yellow-200 to-orange-200 px-5 py-5 shadow-xl shadow-amber-300/50"
                 >
-                  <p className="text-lg font-extrabold text-amber-700">Pass Score Achieved!</p>
-                  <p className="mt-0.5 text-sm text-amber-700/80">
-                    {levelNumber < totalLevels ? `Level ${nextLevel} Unlocked! 🎉` : `You conquered all ${totalLevels} levels! Amazing!`}
+                  <p className="text-2xl font-black tracking-wide text-amber-950 sm:text-3xl">
+                    {levelNumber < totalLevels ? `Level ${nextLevel} Unlocked!` : `You completed all ${totalLevels} levels!`}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-amber-900/80">
+                    Excellent work — you earned {score}/100 and can continue to the next level. 🎉
                   </p>
                 </motion.div>
               ) : (
