@@ -62,11 +62,12 @@ export default function Quiz() {
       setProgress(prog)
       const levelRow = lvlRows.find((l) => l.level_number === levelNumber)
       const progRow = levelRow ? prog.find((p) => p.level_id === levelRow.id) : null
+      const fallbackUnlocked = levelNumber === 1 || Boolean(progRow?.is_unlocked)
       const assessmentEnabled = levelRow
         ? (assessmentType === 'posttest' ? levelRow.posttest_enabled !== false : levelRow.pretest_enabled !== false)
         : false
-      setUnlocked(Boolean(progRow?.is_unlocked))
-      setGate(lvlRows.length && levelRow ? ((progRow?.is_unlocked && assessmentEnabled) ? 'ready' : 'locked') : 'locked')
+      setUnlocked(fallbackUnlocked)
+      setGate(lvlRows.length && levelRow ? ((fallbackUnlocked && assessmentEnabled) ? 'ready' : 'locked') : 'locked')
     } catch (err) {
       showToast({ type: 'error', title: 'Could not load level', message: err.message })
       setGate('locked')

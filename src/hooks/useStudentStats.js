@@ -60,7 +60,7 @@ export default function useStudentStats() {
         progress: p || {
           best_score: 0,
           attempts: 0,
-          is_unlocked: false,
+          is_unlocked: Number(l.level_number) === 1,
           is_completed: false,
         },
       })

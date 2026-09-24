@@ -61,6 +61,40 @@ export function makeAttemptSeed(studentId, levelNumber, attemptSalt) {
   return hashCode(`${studentId}:${levelNumber}:${attemptSalt}`)
 }
 
+export function ensureDefaultUnlockedProgress(levels = [], progress = []) {
+  const rows = Array.isArray(progress) ? [...progress] : []
+
+  for (const level of Array.isArray(levels) ? levels : []) {
+    const levelId = String(level.id)
+    const levelNumber = Number(level.level_number)
+    const existing = rows.find((row) => {
+      const rowLevelId = row?.level_id != null ? String(row.level_id) : ''
+      const rowLevelNumber = Number(row?.level_number)
+      return rowLevelId === levelId || (!Number.isNaN(rowLevelNumber) && rowLevelNumber === levelNumber)
+    })
+
+    if (existing) {
+      existing.is_unlocked = Boolean(existing.is_unlocked) || levelNumber === 1
+      existing.is_completed = Boolean(existing.is_completed)
+      if (existing.level_number == null) existing.level_number = levelNumber
+      if (existing.level_id == null) existing.level_id = levelId
+      continue
+    }
+
+    rows.push({
+      level_id: levelId,
+      level_number: levelNumber,
+      best_score: 0,
+      attempts: 0,
+      is_unlocked: levelNumber === 1,
+      is_completed: false,
+      updated_at: new Date().toISOString(),
+    })
+  }
+
+  return rows
+}
+
 export async function getLevels() {
   if (!isSupabaseConfigured) {
     const state = getDemoState()
@@ -79,13 +113,18 @@ export async function getMyProgress() {
   if (!isSupabaseConfigured) {
     const user = getCurrentDemoUser() || (await getSessionUser())
     if (!user) return []
-    const activeIds = new Set(getDemoState().levels.filter((level) => level.is_active !== false).map((level) => level.id))
-    return getLevelProgressForDemoUser(user.id).filter((progress) => activeIds.has(progress.level_id))
+    const activeLevels = getDemoState().levels.filter((level) => level.is_active !== false)
+    const activeIds = new Set(activeLevels.map((level) => level.id))
+    const rows = getLevelProgressForDemoUser(user.id).filter((progress) => activeIds.has(progress.level_id))
+    return ensureDefaultUnlockedProgress(activeLevels, rows)
   }
 
-  const { data, error } = await supabase.rpc('get_my_progress')
+  const [lvlRows, { data, error }] = await Promise.all([
+    getLevels(),
+    supabase.rpc('get_my_progress'),
+  ])
   if (error) throw new Error(error.message)
-  return data || []
+  return ensureDefaultUnlockedProgress(lvlRows, data || [])
 }
 
 export async function getQuestionsForLevel(levelId) {
