@@ -248,6 +248,11 @@ create policy "profiles_update_admin"
   using (public.is_admin())
   with check (public.is_admin());
 
+drop policy if exists "profiles_insert_own" on public.profiles;
+create policy "profiles_insert_own"
+  on public.profiles for insert
+  with check (auth.uid() = id);
+
 drop policy if exists "profiles_insert_admin" on public.profiles;
 create policy "profiles_insert_admin"
   on public.profiles for insert

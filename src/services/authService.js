@@ -11,7 +11,36 @@ import {
 } from './localDemo'
 
 const EMAIL_DOMAIN = 'gmail.com'
-const LEGACY_EMAIL_DOMAINS = ['evolutionquiz.com', 'evolution.quiz']
+const LEGACY_EMAIL_DOMAINS = ['evolutionquiz.com', 'evolution.quiz', 'gmail.com']
+
+function usernameCandidates(raw) {
+  const base = String(raw || '').trim().toLowerCase()
+  if (!base) return []
+
+  const candidates = new Set([
+    base,
+    base.replace(/\s+/g, ''),
+    base.replace(/\./g, ''),
+  ])
+
+  const parts = base.split(/\s+/).filter(Boolean)
+  if (parts.length > 1) {
+    const last = parts[parts.length - 1]
+    const first = parts[0]
+    candidates.add(`${last}.${first}`)
+    candidates.add(`${first}.${last}`)
+  }
+
+  if (base.includes('.')) {
+    const [first, last] = base.split('.')
+    if (first && last) {
+      candidates.add(`${last}.${first}`)
+      candidates.add(`${first}.${last}`)
+    }
+  }
+
+  return [...candidates].filter(Boolean)
+}
 
 export function normalizeUsername(raw) {
   const trimmed = String(raw || '').trim().toLowerCase()
@@ -122,7 +151,20 @@ export async function signUp({ fullName, username: requestedUsername, birthdate,
   }
   if (!data?.user) throw new Error('Sign up failed. Please try again.')
 
-  const profile = await waitForProfile(data.user.id)
+  let profile = await waitForProfile(data.user.id)
+  if (!profile) {
+    profile = await ensureProfileExists({
+      userId: data.user.id,
+      fullName,
+      username,
+      birthdate,
+    })
+  }
+
+  if (!profile) {
+    throw new Error('Profile creation did not complete. Please run the Supabase SQL schema in supabase/schema.sql.')
+  }
+
   return { user: data.user, profile }
 }
 
@@ -133,6 +175,33 @@ async function waitForProfile(userId, attempts = 8) {
     await new Promise((r) => setTimeout(r, 400))
   }
   return null
+}
+
+async function ensureProfileExists({ userId, fullName, username, birthdate }) {
+  if (!userId) return null
+
+  const profile = {
+    id: userId,
+    full_name: fullName.trim(),
+    birthdate,
+    username,
+    role: 'student',
+    account_status: 'active',
+    created_at: new Date().toISOString(),
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .upsert(profile, { onConflict: 'id' })
+    .select('*')
+    .maybeSingle()
+
+  if (error) {
+    console.warn('ensureProfileExists failed:', error.message)
+    return null
+  }
+
+  return data || profile
 }
 
 export async function signIn({ username, password }) {
@@ -182,7 +251,7 @@ export async function signIn({ username, password }) {
   const canonical = await resolveCanonicalUsername(username)
   if (canonical) typed = canonical
 
-  const domains = [EMAIL_DOMAIN, ...LEGACY_EMAIL_DOMAINS]
+  const domains = Array.from(new Set([EMAIL_DOMAIN, ...LEGACY_EMAIL_DOMAINS]))
   let data
   let error
 
@@ -194,6 +263,21 @@ export async function signIn({ username, password }) {
     data = result.data
     error = result.error
     if (!error) break
+  }
+
+  if (error && typed) {
+    const alternateEmails = [...new Set(usernameCandidates(typed).flatMap((candidate) => domains.map((domain) => emailFor(candidate, domain))))]
+    for (const email of alternateEmails) {
+      const fallback = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (!fallback.error) {
+        data = fallback.data
+        error = null
+        break
+      }
+    }
   }
 
   if (error) throw new Error('Invalid username or password.')
