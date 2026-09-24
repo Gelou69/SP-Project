@@ -41,8 +41,10 @@ export default function Results() {
     return attempt
   }, [attempt])
 
+  const score = Number(result.score ?? result.percentage ?? 0)
+  const effectivePassed = score >= PASSING_SCORE || Boolean(result.passed)
   const justFinishedNonPerfect = Boolean(
-    location.state?.result && !location.state.result.passed
+    location.state?.result && !effectivePassed
   )
 
   // Arriving straight from a finished quiz below the pass threshold → show the
@@ -74,8 +76,7 @@ export default function Results() {
 
   const assessmentType = result?.assessment_type === 'posttest' ? 'posttest' : 'pretest'
   const assessmentLabel = assessmentType === 'posttest' ? 'Post-test' : 'Pre-test'
-  const score = Number(result.score ?? result.percentage ?? 0)
-  const passed = Boolean(result.passed ?? score >= PASSING_SCORE)
+  const passed = score >= PASSING_SCORE || Boolean(result.passed)
   const correct = result.correct_answers ?? 0
   const wrong = result.wrong_answers ?? 0
   const total = result.total_questions ?? 10
