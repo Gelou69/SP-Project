@@ -406,12 +406,33 @@ begin
     on conflict (student_id, level_id) do nothing;
   end loop;
 
-  update public.student_progress
-     set is_unlocked = true,
+  update public.student_progress sp
+     set is_unlocked = (
+       l.level_number = 1
+       or (
+         coalesce((select max(best_score)
+                  from public.student_progress sp_prev
+                  join public.levels l_prev on l_prev.id = sp_prev.level_id
+                  where sp_prev.student_id = v_uid
+                    and l_prev.level_number = l.level_number - 1), 0) >= 80
+       )
+       or sp.is_unlocked
+     ),
          updated_at = now()
-   where student_id = v_uid
-     and level_id = (select id from public.levels where level_number = 1)
-     and is_unlocked = false;
+    from public.levels l
+   where sp.student_id = v_uid
+     and sp.level_id = l.id
+     and sp.is_unlocked is distinct from (
+       l.level_number = 1
+       or (
+         coalesce((select max(best_score)
+                  from public.student_progress sp_prev
+                  join public.levels l_prev on l_prev.id = sp_prev.level_id
+                  where sp_prev.student_id = v_uid
+                    and l_prev.level_number = l.level_number - 1), 0) >= 80
+       )
+       or sp.is_unlocked
+     );
 
   return query
     select sp.*

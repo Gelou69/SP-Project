@@ -64,8 +64,9 @@ export function makeAttemptSeed(studentId, levelNumber, attemptSalt) {
 
 export function ensureDefaultUnlockedProgress(levels = [], progress = []) {
   const rows = Array.isArray(progress) ? [...progress] : []
+  const orderedLevels = Array.isArray(levels) ? [...levels].sort((a, b) => Number(a.level_number) - Number(b.level_number)) : []
 
-  for (const level of Array.isArray(levels) ? levels : []) {
+  for (const level of orderedLevels) {
     const levelId = String(level.id)
     const levelNumber = Number(level.level_number)
     const existing = rows.find((row) => {
@@ -74,8 +75,19 @@ export function ensureDefaultUnlockedProgress(levels = [], progress = []) {
       return rowLevelId === levelId || (!Number.isNaN(rowLevelNumber) && rowLevelNumber === levelNumber)
     })
 
+    const previousLevel = orderedLevels.find((candidate) => Number(candidate.level_number) === levelNumber - 1)
+    const previousProgress = previousLevel
+      ? rows.find((row) => {
+          const rowLevelNumber = Number(row?.level_number)
+          return rowLevelNumber === Number(previousLevel.level_number)
+        })
+      : null
+    const previousPassed = previousProgress ? Number(previousProgress.best_score || 0) >= PASSING_SCORE : false
+
+    const unlocked = Boolean(existing?.is_unlocked) || levelNumber === 1 || previousPassed
+
     if (existing) {
-      existing.is_unlocked = Boolean(existing.is_unlocked) || levelNumber === 1
+      existing.is_unlocked = unlocked
       existing.is_completed = Boolean(existing.is_completed)
       if (existing.level_number == null) existing.level_number = levelNumber
       if (existing.level_id == null) existing.level_id = levelId
@@ -87,7 +99,7 @@ export function ensureDefaultUnlockedProgress(levels = [], progress = []) {
       level_number: levelNumber,
       best_score: 0,
       attempts: 0,
-      is_unlocked: levelNumber === 1,
+      is_unlocked: unlocked,
       is_completed: false,
       updated_at: new Date().toISOString(),
     })
