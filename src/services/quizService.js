@@ -115,9 +115,13 @@ export async function checkAnswer(questionId, selectedAnswer) {
   return Boolean(data)
 }
 
-export async function buildQuiz({ levelNumber, levels, studentId, attemptSalt }) {
+export async function buildQuiz({ levelNumber, levels, studentId, attemptSalt, assessmentType = 'pretest' }) {
+  const normalizedAssessmentType = normalizeAssessmentType(assessmentType)
   const level = levels.find((l) => l.level_number === levelNumber)
   if (!level) throw new Error('Level not found.')
+  if (!isAssessmentEnabled(level, normalizedAssessmentType)) {
+    throw new Error(`${normalizedAssessmentType === 'posttest' ? 'Post-test' : 'Pre-test'} is currently disabled for this level.`)
+  }
 
   const questions = isSupabaseConfigured
     ? await getQuestionsForLevel(level.id)

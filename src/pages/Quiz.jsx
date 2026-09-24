@@ -73,7 +73,7 @@ export default function Quiz() {
     } finally {
       setLoading(false)
     }
-  }, [levelNumber, showToast])
+  }, [assessmentType, levelNumber, showToast])
 
   useEffect(() => {
     if (!user) return
@@ -195,6 +195,16 @@ export default function Quiz() {
 
   const startQuiz = useCallback(async () => {
     try {
+      if (!assessmentEnabled) {
+        setGate('locked')
+        showToast({
+          type: 'info',
+          title: `${assessmentLabel} disabled`,
+          message: 'This assessment is currently turned off by the teacher.',
+        })
+        return
+      }
+
       focusViolationRef.current = 0
       focusFailureLockedRef.current = false
       focusLeftRef.current = false
@@ -204,7 +214,7 @@ export default function Quiz() {
       setGate('active')
       startQuizMusic()
       quizMusicRef.current = true
-      const built = await buildQuiz({ levelNumber, levels, studentId: user.id, attemptSalt: saltRef.current })
+      const built = await buildQuiz({ levelNumber, levels, studentId: user.id, attemptSalt: saltRef.current, assessmentType })
       startedAtRef.current = new Date().toISOString()
       setQuestions(built.questions)
       setCurrentIndex(0)
@@ -219,7 +229,7 @@ export default function Quiz() {
       setGate('ready')
       showToast({ type: 'error', title: 'Cannot start quiz', message: err.message })
     }
-  }, [activeQuizSessionKey, levelNumber, levels, user, showToast, startQuizMusic, stopQuizMusic])
+  }, [activeQuizSessionKey, assessmentEnabled, assessmentLabel, levelNumber, levels, user, showToast, startQuizMusic, stopQuizMusic])
 
   const finalizeQuiz = useCallback(async (forced = false) => {
     if (gate === 'submitting') return
