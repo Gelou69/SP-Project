@@ -16,6 +16,12 @@ const LEVEL_EMOJI = {
   6: '🌳', 7: '🌿', 8: '🐦', 9: '👨‍👩‍👧', 10: '👑',
 }
 
+const getLevelTargetScore = (levelNumber) => {
+  if (levelNumber === 1) return 100
+  if (levelNumber === 2) return 90
+  return 80
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { profile } = useAuth()
@@ -325,6 +331,7 @@ function LevelCard({ row, index, onPlay, onNotes }) {
   const pretestAllowed = row.pretest_enabled !== false
   const posttestAllowed = row.posttest_enabled !== false
   const emoji = LEVEL_EMOJI[row.level_number] || '🧬'
+  const targetScore = getLevelTargetScore(row.level_number)
 
   return (
     <motion.div
@@ -388,6 +395,11 @@ function LevelCard({ row, index, onPlay, onNotes }) {
           <ProgressBar value={p.best_score || 0} max={100} tone={isCompleted ? 'green' : 'sky'} className="flex-1" />
           <span className="text-[11px] font-bold text-slate-500">{pct}%</span>
         </div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between rounded-xl border border-violet-100 bg-violet-50/80 px-2.5 py-2 text-[11px] font-bold text-violet-700">
+        <span>Target</span>
+        <span>{targetScore}/100</span>
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-2">

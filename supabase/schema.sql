@@ -462,21 +462,33 @@ language sql
 security definer
 set search_path = public
 as $$
-  with ranked as (
+  with student_best as (
     select
-      a.student_id,
+      sp.student_id,
       p.full_name,
       p.username,
-      max(a.correct_answers) as correct_answers,
-      max(a.score) as score,
-      row_number() over (
-        order by max(a.correct_answers) desc, max(a.score) desc, p.username asc
-      ) as rank_no
-    from public.quiz_attempts a
-    join public.profiles p on p.id = a.student_id
+      max(sp.best_score) as score,
+      max(qa.correct_answers) as correct_answers
+    from public.student_progress sp
+    join public.profiles p on p.id = sp.student_id
+    left join public.quiz_attempts qa on qa.student_id = sp.student_id
     where p.role = 'student'
       and p.account_status = 'active'
-    group by a.student_id, p.full_name, p.username
+    group by sp.student_id, p.full_name, p.username
+  ),
+  ranked as (
+    select
+      student_id,
+      full_name,
+      username,
+      coalesce(correct_answers, 0) as correct_answers,
+      coalesce(score, 0) as score,
+      row_number() over (
+        order by coalesce(score, 0) desc,
+                 coalesce(correct_answers, 0) desc,
+                 username asc
+      ) as rank_no
+    from student_best
   )
   select
     rank_no,
