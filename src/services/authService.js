@@ -87,25 +87,61 @@ function demoUsernameVariants(raw) {
 
 const emailFor = (username, domain = EMAIL_DOMAIN) => `${username.toLowerCase().replace(/\s+/g, '')}@${domain}`
 
+async function findProfileByUsername(username) {
+  if (!isSupabaseConfigured || !username) return null
+
+  const candidates = Array.from(new Set([
+    normalizeUsername(username),
+    String(username || '').trim().toLowerCase(),
+    String(username || '').trim().replace(/\s+/g, ''),
+    ...usernameCandidates(String(username || '').trim()),
+  ].filter(Boolean)))
+
+  if (!candidates.length) return null
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('username', candidates)
+    .limit(20)
+
+  if (error) {
+    console.warn('profile lookup failed:', error.message)
+    return null
+  }
+
+  return data?.find((row) => candidates.some((candidate) => row.username.toLowerCase() === candidate.toLowerCase())) || null
+}
+
 async function resolveCanonicalUsername(username) {
   if (!isSupabaseConfigured) {
     const user = findDemoUserByUsername(username)
     return user?.username || null
   }
 
-  const normalized = normalizeUsername(username)
+  const profile = await findProfileByUsername(username)
+  if (profile) return profile.username
+
+  const fallbackCandidates = Array.from(new Set([
+    normalizeUsername(username),
+    String(username || '').trim().toLowerCase(),
+    String(username || '').trim().replace(/\s+/g, ''),
+    ...usernameCandidates(String(username || '').trim()),
+  ].filter(Boolean)))
+
+  if (!fallbackCandidates.length) return null
+
   const { data, error } = await supabase
     .from('profiles')
     .select('username')
-    .ilike('username', `${normalized}%`)
-    .limit(5)
+    .or(fallbackCandidates.map((candidate) => `username.ilike.%${candidate}%`).join(','))
+    .limit(20)
 
   if (error) {
-    console.warn('profile lookup failed:', error.message)
+    console.warn('profile fallback lookup failed:', error.message)
     return null
   }
-  const exact = data?.find((p) => p.username.toLowerCase() === normalized)
-  if (exact) return exact.username
+
   const match = data?.slice().sort((a, b) => a.username.length - b.username.length)[0]
   return match?.username || null
 }
@@ -280,7 +316,13 @@ export async function signIn({ username, password }) {
     }
   }
 
-  if (error) throw new Error('Invalid username or password.')
+  if (error) {
+    const profileMatch = await findProfileByUsername(typed)
+    if (profileMatch) {
+      throw new Error('This account exists in the database but is not linked to a valid Supabase Auth user. Please create it again through signup or ask the admin to recreate the account.')
+    }
+    throw new Error('Invalid username or password.')
+  }
 
   const profile = await fetchProfile(data.user.id)
   if (profile && profile.account_status === 'disabled') {
