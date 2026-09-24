@@ -101,7 +101,7 @@ export default function Dashboard() {
       <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard icon={Star} label="Total Points" value={stats.totalPoints} tone="amber" />
         <StatCard icon={Target} label="Best Score" value={`${stats.bestScore}/100`} tone="emerald" />
-        <StatCard icon={Medal} label="Completed Levels" value={`${stats.completedCount}/10`} tone="sky" />
+        <StatCard icon={Medal} label="Completed Levels" value={`${stats.completedCount}/${stats.totalLevels}`} tone="sky" />
         <StatCard icon={History} label="Quiz Attempts" value={stats.attemptsCount} tone="violet" />
       </div>
 
@@ -157,7 +157,9 @@ export default function Dashboard() {
               <div className="px-5 py-8 text-sm text-slate-500">No leaderboard data available yet.</div>
             ) : (
               leaderboard.map((entry) => {
-                const levelBadge = `Lvl ${entry.highest_level ?? 1} - ${(entry.highest_score ?? entry.score ?? 0)}`
+                const highestLevel = Number(entry.highest_level ?? 1)
+                const highestScore = Number(entry.highest_score ?? entry.score ?? 0)
+                const levelBadge = `Lvl 1-${highestLevel} • ${highestScore}`
 
                 return (
                   <div key={`${entry.student_id || entry.username || entry.rank}`} className="flex items-center justify-between gap-4 px-5 py-3">
@@ -170,10 +172,6 @@ export default function Dashboard() {
                         <p className="text-xs text-slate-500">@{entry.username}</p>
                         <p className="text-[11px] font-bold text-violet-600">{levelBadge}</p>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-black text-slate-800">{entry.correct_answers} correct</p>
-                      <p className="text-[11px] font-semibold text-slate-500">{entry.score}/100 score</p>
                     </div>
                   </div>
                 )

@@ -73,13 +73,15 @@ export default function useStudentStats() {
     const current = levelRows.find((r) => r.progress.is_unlocked && !r.progress.is_completed)
     const totalPoints = levelRows.reduce((sum, r) => sum + (r.progress.best_score || 0), 0)
     const bestScore = levelRows.reduce((m, r) => Math.max(m, r.progress.best_score || 0), 0)
+    const totalLevels = Math.max(levelRows.length, 1)
     return {
-      currentLevel: current?.level_number || (completed.length === levelRows.length && levelRows.length ? 10 : 1),
+      currentLevel: current?.level_number || (completed.length === totalLevels && totalLevels ? totalLevels : 1),
       completedCount: completed.length,
       totalPoints,
       bestScore,
       attemptsCount: attempts.length,
-      progressPercent: levelRows.length ? Math.round((completed.length / levelRows.length) * 100) : 0,
+      progressPercent: totalLevels ? Math.round((completed.length / totalLevels) * 100) : 0,
+      totalLevels,
     }
   }, [levelRows, attempts])
 

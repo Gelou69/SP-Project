@@ -132,7 +132,7 @@ export default function Profile() {
         <div className="border-b border-slate-100 px-5 py-4">
           <h2 className="text-base font-bold text-slate-900">Quiz Progress</h2>
           <p className="text-xs text-slate-500">
-            Current level: {isAdmin ? 'Admin' : `Level ${stats.currentLevel}`} · Completed: {stats.completedCount}/10 · Total points: {stats.totalPoints}
+            Current level: {isAdmin ? 'Admin' : `Level ${stats.currentLevel}`} · Completed: {stats.completedCount}/{stats.totalLevels} · Total points: {stats.totalPoints}
           </p>
         </div>
         <div className="overflow-x-auto">
