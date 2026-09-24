@@ -251,6 +251,19 @@ export default function Dashboard() {
               <p className="mt-2 text-sm text-slate-600">{notes.summary}</p>
             </div>
 
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+              <div className="aspect-video w-full">
+                <iframe
+                  className="h-full w-full"
+                  src="https://www.youtube.com/embed/MmfO1YgzmHI?si=MF-xBK3_Mt3KVHXd"
+                  title="Law of Sines lecture video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Quick review</p>
               <p className="mt-2 text-sm text-slate-700">{notes.quickReview || notes.description || 'Review all key ideas before continuing.'}</p>

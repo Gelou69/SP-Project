@@ -285,111 +285,23 @@ export async function submitQuiz({ levelNumber, answers, timeUsed, startedAt, as
 
 export async function getLevelNotes(levelNumber) {
   const level = Number(levelNumber)
-  const notes = {
-    1: {
-      title: 'Level 1: Evolution Foundations',
-      summary: 'Evolution explains how populations change over generations through variation, inheritance, and selection.',
-      keyPoints: [
-        'Variation exists within a population because individuals are not identical.',
-        'Traits can be inherited, so beneficial characteristics can be passed to offspring.',
-        'Natural selection favors individuals whose traits help them survive and reproduce.',
-      ],
-      quickReview: 'The best-adapted organisms leave more offspring, shifting the population over time.',
-    },
-    2: {
-      title: 'Level 2: Fossils and Geological Time',
-      summary: 'Fossils and rock layers preserve evidence of how life changed across long spans of time.',
-      keyPoints: [
-        'Older layers are usually deeper than younger layers.',
-        'Index fossils help scientists match and date rock layers.',
-        'Transitional fossils show intermediate traits between groups.',
-      ],
-      quickReview: 'The fossil record reveals a long history of life with gradual change and extinction.',
-    },
-    3: {
-      title: 'Level 3: Comparative Anatomy',
-      summary: 'Similar structures can signal shared ancestry when they are built from the same underlying pattern.',
-      keyPoints: [
-        'Homologous structures show a common ancestor.',
-        'Analogous structures arise from similar functions, not common ancestry.',
-        'Vestigial structures are inherited leftovers that are no longer useful.',
-      ],
-      quickReview: 'Structure can reveal evolutionary relationships even when species look different outwardly.',
-    },
-    4: {
-      title: 'Level 4: Molecular and Embryonic Evidence',
-      summary: 'DNA sequences and early embryos provide strong evidence that species are related.',
-      keyPoints: [
-        'Closely related species share more of their DNA.',
-        'Embryos of different vertebrates look similar during early development.',
-        'The same genetic code appears across nearly all living organisms.',
-      ],
-      quickReview: 'Molecular and developmental evidence often confirms the same evolutionary relationships seen in fossils and anatomy.',
-    },
-    5: {
-      title: 'Level 5: Natural Selection in Action',
-      summary: 'Natural selection changes the frequency of traits in a population when the environment favors some individuals over others.',
-      keyPoints: [
-        'Variation is necessary for selection to act.',
-        'Selection is based on survival and reproduction, not individual need.',
-        'Traits that improve survival become more common over generations.',
-      ],
-      quickReview: 'Evolution happens in populations over time, not within a single organism’s lifetime.',
-    },
-    6: {
-      title: 'Level 6: Phylogenetic Trees',
-      summary: 'Phylogenetic trees show evolutionary relationships and common ancestors among groups of organisms.',
-      keyPoints: [
-        'Branch points represent common ancestors.',
-        'Organisms with a more recent shared ancestor are more closely related.',
-        'Tree branch length can represent time or amount of evolutionary change.',
-      ],
-      quickReview: 'The tree of life organizes species around shared ancestry rather than simple similarity.',
-    },
-    7: {
-      title: 'Level 7: Cladograms and Classification',
-      summary: 'Cladograms use shared derived characters to group organisms into clades.',
-      keyPoints: [
-        'A clade includes an ancestor and all of its descendants.',
-        'The outgroup is used as a comparison point.',
-        'Shared derived traits are better evidence than overall appearance alone.',
-      ],
-      quickReview: 'Evolutionary history, not just outward traits, determines classification.',
-    },
-    8: {
-      title: 'Level 8: Adaptation and Survival',
-      summary: 'Adaptations help organisms survive, reproduce, and thrive in specific environments.',
-      keyPoints: [
-        'Adaptations can be structural, behavioral, or physiological.',
-        'Migration, camouflage, and mimicry are examples of survival strategies.',
-        'Natural selection increases the frequency of beneficial traits.',
-      ],
-      quickReview: 'A trait is adaptive only when it improves survival or reproduction in a particular environment.',
-    },
-    9: {
-      title: 'Level 9: Evolution Today',
-      summary: 'Evolution is still happening in modern species such as bacteria, viruses, and insects.',
-      keyPoints: [
-        'Antibiotic resistance and pesticide resistance are modern examples of natural selection.',
-        'Mutations create new genetic variation.',
-        'Rapidly reproducing organisms can show evolutionary change in a short time.',
-      ],
-      quickReview: 'Evolution is not just a past event; it is an active process in living populations today.',
-    },
-    10: {
-      title: 'Level 10: Mastery of Evolution',
-      summary: 'The final level combines evidence from fossils, anatomy, genetics, and natural selection into one explanation of evolution.',
-      keyPoints: [
-        'All evidence points to common ancestry.',
-        'Natural selection explains how populations adapt and diversify.',
-        'Evolution is supported by multiple independent lines of evidence.',
-      ],
-      quickReview: 'The strongest scientific explanation links fossils, traits, and DNA into one coherent story of life on Earth.',
-    },
+  const lectureVideoUrl = 'https://youtu.be/MmfO1YgzmHI?si=MF-xBK3_Mt3KVHXd'
+
+  const base = {
+    level_number: level,
+    title: `Lecture Video for Level ${level}`,
+    summary: 'Watch this prepared lecture video to review the main ideas before continuing with the quiz.',
+    quickReview: 'Use the video as your lecture resource for this level and review the explanation before retaking the quiz.',
+    keyPoints: [
+      'Watch the full lecture video for the lesson explanation.',
+      'Review the concept before attempting the next quiz.',
+      'Use the video as the shared lecture resource for all levels.',
+    ],
+    videoUrl: lectureVideoUrl,
   }
 
   if (!isSupabaseConfigured) {
-    return notes[level] || notes[1]
+    return base
   }
 
   const { data: levelRow, error } = await supabase
@@ -400,13 +312,10 @@ export async function getLevelNotes(levelNumber) {
 
   if (error) throw new Error(error.message)
 
-  const base = notes[level] || notes[1]
   return {
     ...base,
-    level_number: level,
-    title: levelRow?.title || base.title,
+    title: `Lecture Video: ${levelRow?.title || `Level ${level}`}`,
     description: levelRow?.description || base.summary,
-    summary: base.summary,
   }
 }
 
