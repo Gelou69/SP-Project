@@ -467,40 +467,33 @@ language sql
 security definer
 set search_path = public
 as $$
-  with level_scores as (
+  with student_levels as (
     select
       sp.student_id,
       p.full_name,
       p.username,
       l.level_number,
-      sp.best_score
+      coalesce(sp.best_score, 0) as best_score,
+      coalesce(sp.best_score / 10, 0) as correct_answers_this_level
     from public.student_progress sp
     join public.levels l on l.id = sp.level_id
     join public.profiles p on p.id = sp.student_id
     where p.role = 'student'
       and p.account_status = 'active'
+      and l.is_active = true
   ),
-  student_best as (
+  totals as (
     select
-      s.student_id,
-      s.full_name,
-      s.username,
-      max(s.best_score) as score,
-      max(q.correct_answers) as correct_answers,
-      max(case when s.level_number = (
-        select max(level_number) from public.levels where is_active = true
-      ) then s.best_score else 0 end) as highest_score,
-      max(case when s.level_number = (
-        select max(level_number) from public.levels where is_active = true
-      ) then s.level_number else 1 end) as highest_level,
-      string_agg(format('Lvl%s-%s', s.level_number, s.best_score), ' ' order by s.level_number) as level_summary
-    from level_scores s
-    left join lateral (
-      select max(a.correct_answers) as correct_answers
-      from public.quiz_attempts a
-      where a.student_id = s.student_id
-    ) q on true
-    group by s.student_id, s.full_name, s.username
+      student_id,
+      full_name,
+      username,
+      sum(correct_answers_this_level)::int as correct_answers,
+      sum(best_score)::int as score,
+      max(level_number) as highest_level,
+      max(best_score) as highest_score,
+      string_agg(format('Lvl%s-%s', level_number, best_score), ' ' order by level_number) as level_summary
+    from student_levels
+    group by student_id, full_name, username
   ),
   ranked as (
     select
@@ -513,11 +506,11 @@ as $$
       coalesce(highest_score, 0) as highest_score,
       coalesce(level_summary, 'Lvl1-0') as level_summary,
       row_number() over (
-        order by coalesce(score, 0) desc,
-                 coalesce(correct_answers, 0) desc,
+        order by coalesce(correct_answers, 0) desc,
+                 coalesce(score, 0) desc,
                  username asc
       ) as rank_no
-    from student_best
+    from totals
   )
   select
     rank_no,
@@ -533,6 +526,8 @@ as $$
   where rank_no <= p_limit
   order by rank_no;
 $$;
+
+grant execute on function public.get_student_leaderboard(int) to authenticated;
 
 grant execute on function public.get_student_leaderboard(int) to authenticated;
 
