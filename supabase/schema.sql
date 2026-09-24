@@ -449,6 +449,8 @@ $$;
 -- best result, not by every individual attempt record.
 -- ============================================================
 
+drop function if exists public.get_student_leaderboard(integer);
+
 create or replace function public.get_student_leaderboard(p_limit int default 10)
 returns table (
   rank_no bigint,
@@ -458,29 +460,25 @@ returns table (
   correct_answers int,
   score int,
   highest_level int,
-  highest_score int
+  highest_score int,
+  level_summary text
 )
 language sql
 security definer
 set search_path = public
 as $$
-  with student_level_scores as (
+  with level_scores as (
     select
       sp.student_id,
       p.full_name,
       p.username,
       l.level_number,
-      sp.best_score,
-      row_number() over (
-        partition by sp.student_id
-        order by l.level_number desc, sp.best_score desc
-      ) as rn
+      sp.best_score
     from public.student_progress sp
     join public.levels l on l.id = sp.level_id
     join public.profiles p on p.id = sp.student_id
     where p.role = 'student'
       and p.account_status = 'active'
-      and sp.best_score > 0
   ),
   student_best as (
     select
@@ -489,9 +487,14 @@ as $$
       s.username,
       max(s.best_score) as score,
       max(q.correct_answers) as correct_answers,
-      max(case when s.rn = 1 then s.level_number else 0 end) as highest_level,
-      max(case when s.rn = 1 then s.best_score else 0 end) as highest_score
-    from student_level_scores s
+      max(case when s.level_number = (
+        select max(level_number) from public.levels where is_active = true
+      ) then s.best_score else 0 end) as highest_score,
+      max(case when s.level_number = (
+        select max(level_number) from public.levels where is_active = true
+      ) then s.level_number else 1 end) as highest_level,
+      string_agg(format('Lvl%s-%s', s.level_number, s.best_score), ' ' order by s.level_number) as level_summary
+    from level_scores s
     left join lateral (
       select max(a.correct_answers) as correct_answers
       from public.quiz_attempts a
@@ -508,6 +511,7 @@ as $$
       coalesce(score, 0) as score,
       coalesce(highest_level, 1) as highest_level,
       coalesce(highest_score, 0) as highest_score,
+      coalesce(level_summary, 'Lvl1-0') as level_summary,
       row_number() over (
         order by coalesce(score, 0) desc,
                  coalesce(correct_answers, 0) desc,
@@ -523,7 +527,8 @@ as $$
     correct_answers,
     score,
     highest_level,
-    highest_score
+    highest_score,
+    level_summary
   from ranked
   where rank_no <= p_limit
   order by rank_no;

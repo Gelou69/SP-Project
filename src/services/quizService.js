@@ -334,16 +334,16 @@ export async function getLevelNotes(levelNumber) {
 export async function getLeaderboard(limit = 10) {
   if (!isSupabaseConfigured) {
     const demoRows = [
-      { rank: 1, name: 'Ariana', username: 'ariana.quiz', correct_answers: 10, score: 100, highest_level: 1, highest_score: 100 },
-      { rank: 2, name: 'Marcus', username: 'marcus.quiz', correct_answers: 10, score: 98, highest_level: 2, highest_score: 90 },
-      { rank: 3, name: 'Leah', username: 'leah.quiz', correct_answers: 9, score: 80, highest_level: 3, highest_score: 80 },
-      { rank: 4, name: 'Noah', username: 'noah.quiz', correct_answers: 9, score: 89, highest_level: 2, highest_score: 89 },
-      { rank: 5, name: 'Jasmine', username: 'jasmine.quiz', correct_answers: 9, score: 88, highest_level: 2, highest_score: 88 },
-      { rank: 6, name: 'Daniel', username: 'daniel.quiz', correct_answers: 8, score: 87, highest_level: 2, highest_score: 87 },
-      { rank: 7, name: 'Mila', username: 'mila.quiz', correct_answers: 8, score: 85, highest_level: 2, highest_score: 85 },
-      { rank: 8, name: 'Owen', username: 'owen.quiz', correct_answers: 8, score: 84, highest_level: 2, highest_score: 84 },
-      { rank: 9, name: 'Sofia', username: 'sofia.quiz', correct_answers: 8, score: 83, highest_level: 2, highest_score: 83 },
-      { rank: 10, name: 'Lucas', username: 'lucas.quiz', correct_answers: 8, score: 82, highest_level: 2, highest_score: 82 },
+      { rank: 1, name: 'Ariana', username: 'ariana.quiz', correct_answers: 10, score: 100, level_summary: 'Lvl1-100 Lvl2-100 Lvl3-100 Lvl4-100 Lvl5-100' },
+      { rank: 2, name: 'Marcus', username: 'marcus.quiz', correct_answers: 10, score: 98, level_summary: 'Lvl1-100 Lvl2-90 Lvl3-100 Lvl4-100 Lvl5-100' },
+      { rank: 3, name: 'Leah', username: 'leah.quiz', correct_answers: 9, score: 80, level_summary: 'Lvl1-100 Lvl2-80 Lvl3-100 Lvl4-0 Lvl5-0' },
+      { rank: 4, name: 'Noah', username: 'noah.quiz', correct_answers: 9, score: 89, level_summary: 'Lvl1-100 Lvl2-89 Lvl3-0 Lvl4-0 Lvl5-0' },
+      { rank: 5, name: 'Jasmine', username: 'jasmine.quiz', correct_answers: 9, score: 88, level_summary: 'Lvl1-100 Lvl2-88 Lvl3-0 Lvl4-0 Lvl5-0' },
+      { rank: 6, name: 'Daniel', username: 'daniel.quiz', correct_answers: 8, score: 87, level_summary: 'Lvl1-100 Lvl2-87 Lvl3-0 Lvl4-0 Lvl5-0' },
+      { rank: 7, name: 'Mila', username: 'mila.quiz', correct_answers: 8, score: 85, level_summary: 'Lvl1-90 Lvl2-85 Lvl3-0 Lvl4-0 Lvl5-0' },
+      { rank: 8, name: 'Owen', username: 'owen.quiz', correct_answers: 8, score: 84, level_summary: 'Lvl1-84 Lvl2-0 Lvl3-0 Lvl4-0 Lvl5-0' },
+      { rank: 9, name: 'Sofia', username: 'sofia.quiz', correct_answers: 8, score: 83, level_summary: 'Lvl1-83 Lvl2-0 Lvl3-0 Lvl4-0 Lvl5-0' },
+      { rank: 10, name: 'Lucas', username: 'lucas.quiz', correct_answers: 8, score: 82, level_summary: 'Lvl1-82 Lvl2-0 Lvl3-0 Lvl4-0 Lvl5-0' },
     ]
     return demoRows.slice(0, limit)
   }
@@ -360,6 +360,7 @@ export async function getLeaderboard(limit = 10) {
     score: Number(row.score || 0),
     highest_level: Number(row.highest_level || 1),
     highest_score: Number(row.highest_score || row.score || 0),
+    level_summary: row.level_summary || `Lvl1-${Number(row.highest_score || row.score || 0)}`,
   }))
 }
 

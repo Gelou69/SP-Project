@@ -157,9 +157,7 @@ export default function Dashboard() {
               <div className="px-5 py-8 text-sm text-slate-500">No leaderboard data available yet.</div>
             ) : (
               leaderboard.map((entry) => {
-                const highestLevel = Number(entry.highest_level ?? 1)
-                const highestScore = Number(entry.highest_score ?? entry.score ?? 0)
-                const levelBadge = `Lvl 1-${highestLevel} • ${highestScore}`
+                const levelBadge = entry.level_summary || `Lvl1-${Number(entry.highest_score ?? entry.score ?? 0)}`
 
                 return (
                   <div key={`${entry.student_id || entry.username || entry.rank}`} className="flex items-center justify-between gap-4 px-5 py-3">
@@ -170,8 +168,11 @@ export default function Dashboard() {
                       <div>
                         <p className="text-sm font-extrabold text-slate-800">{entry.name}</p>
                         <p className="text-xs text-slate-500">@{entry.username}</p>
-                        <p className="text-[11px] font-bold text-violet-600">{levelBadge}</p>
                       </div>
+                    </div>
+
+                    <div className="ml-auto text-right">
+                      <p className="text-[11px] font-bold text-violet-600">{levelBadge}</p>
                     </div>
                   </div>
                 )
