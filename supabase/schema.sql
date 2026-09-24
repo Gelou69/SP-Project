@@ -248,10 +248,7 @@ create policy "profiles_update_admin"
   using (public.is_admin())
   with check (public.is_admin());
 
-DELETE FROM public.student_progress
-WHERE level_id IN (
-  SELECT id FROM public.levels WHERE level_number > 5
-);drop policy if exists "profiles_insert_own" on public.profiles;
+drop policy if exists "profiles_insert_own" on public.profiles;
 create policy "profiles_insert_own"
   on public.profiles for insert
   with check (auth.uid() = id);
