@@ -119,14 +119,18 @@ async function resolveCanonicalUsername(username) {
     return user?.username || null
   }
 
-  const profile = await findProfileByUsername(username)
+  const input = String(username || '').trim()
+  if (!input) return null
+
+  const profile = await findProfileByUsername(input)
   if (profile) return profile.username
 
   const fallbackCandidates = Array.from(new Set([
-    normalizeUsername(username),
-    String(username || '').trim().toLowerCase(),
-    String(username || '').trim().replace(/\s+/g, ''),
-    ...usernameCandidates(String(username || '').trim()),
+    normalizeUsername(input),
+    input.toLowerCase(),
+    input.replace(/\s+/g, ''),
+    ...usernameCandidates(input),
+    ...(input.includes('@') ? [input.split('@')[0], normalizeUsername(input.split('@')[0])] : []),
   ].filter(Boolean)))
 
   if (!fallbackCandidates.length) return null
@@ -281,19 +285,36 @@ export async function signIn({ username, password }) {
     return { user: { id: matchingUser.id }, profile: matchingUser }
   }
 
-  let typed = normalizeUsername(username)
-  if (!typed) throw new Error('Please enter your username.')
+  const rawInput = String(username || '').trim()
+  const typed = normalizeUsername(rawInput)
+  if (!typed && !rawInput.includes('@')) throw new Error('Please enter your username.')
 
-  const canonical = await resolveCanonicalUsername(username)
-  if (canonical) typed = canonical
+  const canonical = await resolveCanonicalUsername(rawInput)
+  const loginCandidates = Array.from(new Set([
+    canonical || typed || rawInput,
+    rawInput,
+    rawInput.toLowerCase(),
+    rawInput.replace(/\s+/g, ''),
+    ...(rawInput.includes('@') ? [rawInput.split('@')[0], normalizeUsername(rawInput.split('@')[0])] : []),
+    ...(typed ? [typed, ...usernameCandidates(typed)] : []),
+  ].filter(Boolean)))
 
   const domains = Array.from(new Set([EMAIL_DOMAIN, ...LEGACY_EMAIL_DOMAINS]))
   let data
   let error
 
-  for (const domain of domains) {
+  const emailCandidates = Array.from(new Set(
+    loginCandidates.flatMap((candidate) => {
+      const values = [candidate]
+      const local = String(candidate).split('@')[0]
+      if (local && local !== candidate) values.push(local)
+      return values.flatMap((value) => domains.map((domain) => emailFor(value, domain)))
+    })
+  ))
+
+  for (const email of emailCandidates) {
     const result = await supabase.auth.signInWithPassword({
-      email: emailFor(typed, domain),
+      email,
       password,
     })
     data = result.data
@@ -317,7 +338,7 @@ export async function signIn({ username, password }) {
   }
 
   if (error) {
-    const profileMatch = await findProfileByUsername(typed)
+    const profileMatch = await findProfileByUsername(canonical || typed || rawInput)
     if (profileMatch) {
       throw new Error('This account exists in the database but is not linked to a valid Supabase Auth user. Please create it again through signup or ask the admin to recreate the account.')
     }

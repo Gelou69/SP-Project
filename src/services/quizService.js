@@ -133,10 +133,32 @@ export async function getQuestionsForLevel(levelId) {
     return state.questions.filter((question) => Number(question.level) === Number(levelId))
   }
 
+  if (!levelId) return []
+
   const { data, error } = await supabase.rpc('get_level_questions', {
     p_level_id: levelId,
   })
-  if (error) throw new Error(error.message)
+
+  if (Array.isArray(data) && data.length) return data
+
+  if (error) {
+    const fallback = await supabase
+      .from('questions')
+      .select('*')
+      .eq('level_id', levelId)
+      .eq('is_active', true)
+
+    if (!fallback.error && Array.isArray(fallback.data)) {
+      return fallback.data
+    }
+
+    if (!fallback.error && !fallback.data?.length) {
+      return []
+    }
+
+    throw new Error(error.message)
+  }
+
   return data || []
 }
 
