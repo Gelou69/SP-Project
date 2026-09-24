@@ -53,6 +53,10 @@ export default function Quiz() {
   const assessmentType = searchParams.get('type') === 'posttest' ? 'posttest' : 'pretest'
   const assessmentLabel = assessmentType === 'posttest' ? 'Post-test' : 'Pre-test'
   const activeQuizSessionKey = `quiz-session-${levelNumber}-${attempt}`
+  const levelMeta = useMemo(() => levels.find((l) => l.level_number === levelNumber), [levels, levelNumber])
+  const assessmentEnabled = levelMeta
+    ? (assessmentType === 'posttest' ? levelMeta.posttest_enabled !== false : levelMeta.pretest_enabled !== false)
+    : true
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -364,11 +368,6 @@ export default function Quiz() {
   useEffect(() => () => {
     if (quizMusicRef.current) stopQuizMusic()
   }, [stopQuizMusic])
-
-  const levelMeta = useMemo(() => levels.find((l) => l.level_number === levelNumber), [levels, levelNumber])
-  const assessmentEnabled = levelMeta
-    ? (assessmentType === 'posttest' ? levelMeta.posttest_enabled !== false : levelMeta.pretest_enabled !== false)
-    : true
 
   const isReady = gate === 'active' && questions.length > 0
   const progressScore = answers.filter((a) => a.isCorrect).length * 10
