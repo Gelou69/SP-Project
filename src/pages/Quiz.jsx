@@ -41,6 +41,7 @@ export default function Quiz() {
   const [answers, setAnswers] = useState([])
   const [selectedLabel, setSelectedLabel] = useState(null)
   const [answerResult, setAnswerResult] = useState(null) // 'correct' | 'wrong' | null
+  const lastRecordedAnswerRef = useRef(null)
   const startedAtRef = useRef(null)
   const saltRef = useRef(randomSalt())
   const processingRef = useRef(false)
@@ -175,7 +176,9 @@ export default function Quiz() {
         isCorrect = await checkAnswer(q.id, label).catch(() => false)
       }
 
-      setAnswers((prev) => [...prev, { questionId: q.id, selectedLabel: label, timeUsed, isCorrect }])
+      const nextAnswer = { questionId: q.id, selectedLabel: label, timeUsed, isCorrect }
+      lastRecordedAnswerRef.current = nextAnswer
+      setAnswers((prev) => [...prev, nextAnswer])
       setSelectedLabel(label)
       setAnswerResult(label === null ? 'wrong' : isCorrect ? 'correct' : 'wrong')
 
@@ -248,10 +251,14 @@ export default function Quiz() {
         (new Date().getTime() - new Date(startedAtRef.current).getTime()) / 1000
       )
       const submissionAnswers = [...answers]
-      if (currentQuestion && !submissionAnswers.some((entry) => entry.questionId === currentQuestion.id)) {
+      const pendingLatestAnswer = lastRecordedAnswerRef.current
+      if (pendingLatestAnswer && !submissionAnswers.some((entry) => entry.questionId === pendingLatestAnswer.questionId)) {
+        submissionAnswers.push(pendingLatestAnswer)
+      }
+      if (currentQuestion && selectedLabel !== null && !submissionAnswers.some((entry) => entry.questionId === currentQuestion.id)) {
         submissionAnswers.push({
           questionId: currentQuestion.id,
-          selectedLabel: selectedLabel ?? null,
+          selectedLabel,
           timeUsed: Math.max(0, QUIZ_TIME_PER_QUESTION - countdown.seconds),
           isCorrect: false,
         })
