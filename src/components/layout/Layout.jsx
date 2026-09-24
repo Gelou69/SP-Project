@@ -54,20 +54,22 @@ export default function Layout() {
 
       <header className="sticky top-0 z-40 border-b border-white/70 bg-white/75 shadow-lg shadow-sky-100/40 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
-          <Link to={isAdmin ? '/admin' : '/dashboard'} className="group flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded-lg">
+          <Link to={isAdmin ? '/admin' : '/dashboard'} className="group flex items-center gap-3 rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">
             <motion.div
-              whileHover={{ rotate: 12, scale: 1.1 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 15 }}
-              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-white shadow-lg shadow-sky-300/40 ring-1 ring-sky-200"
+              whileHover={{ rotate: 12, scale: 1.12 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 16 }}
+              className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-xl shadow-sky-300/40 ring-2 ring-sky-200/80"
             >
               <img src="/logo.png" alt="Law of Sines logo" className="h-full w-full object-cover" />
             </motion.div>
             <div className="leading-tight">
-              <p className="text-sm font-extrabold text-slate-900 transition-colors group-hover:text-sky-700">
+              <p className="text-base font-black tracking-[0.18em] text-slate-900 transition-all duration-200 group-hover:text-sky-700 sm:text-lg">
                 LAW OF SINES
               </p>
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Grade 10 Math Quests</p>
-              <p className="text-[9px] font-medium text-slate-500">Dr. Sahawi S. Malik</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Grade 10 Math Quests</p>
+              <p className="mt-1 text-[11px] font-black tracking-[0.08em] text-transparent bg-gradient-to-r from-sky-600 via-violet-600 to-emerald-600 bg-clip-text sm:text-sm">
+                Dr. Sahawi S. Malik
+              </p>
             </div>
           </Link>
 

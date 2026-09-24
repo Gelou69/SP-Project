@@ -33,12 +33,21 @@ export default function Dashboard() {
   const openLevelNotes = async (levelNumber) => {
     try {
       const noteSet = await getLevelNotes(levelNumber)
-      setNotes(noteSet)
+      setNotes({
+        ...noteSet,
+        title: 'Law of Sines Lecture Video',
+        summary: 'Watch the main lesson for all levels and review the key ideas before continuing.',
+        quickReview: 'This lesson is used as the shared overview for the whole journey, so you can prepare before each quiz challenge.',
+        keyPoints: ['Review the main triangle relationship', 'Watch the full explanation before retrying', 'Use this lesson as your overall prep for the next level'],
+        level_number: null,
+      })
     } catch (err) {
       setNotes({
-        title: `Level ${levelNumber} Notes`,
-        summary: 'Study the key ideas from this level and review your notes before the next attempt.',
-        keyPoints: ['Review previous quiz feedback', 'Revisit the topic summary', 'Try the next level once you reach 80% or better'],
+        title: 'Law of Sines Lecture Video',
+        summary: 'Watch the main lesson for all levels and review the key ideas before continuing.',
+        quickReview: 'This lesson is used as the shared overview for the whole journey, so you can prepare before each quiz challenge.',
+        keyPoints: ['Review the main triangle relationship', 'Watch the full explanation before retrying', 'Use this lesson as your overall prep for the next level'],
+        level_number: null,
       })
     }
   }
@@ -52,18 +61,21 @@ export default function Dashboard() {
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* greeting */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-sky-600 via-violet-600 to-emerald-600 p-6 text-white shadow-2xl shadow-sky-300/50 sm:p-8">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="portal-panel relative overflow-hidden rounded-[30px] bg-gradient-to-r from-sky-600 via-violet-600 to-emerald-600 p-6 text-white shadow-[0_25px_60px_-20px_rgba(14,165,233,0.5)] sm:p-8">
         <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="animate-float absolute left-8 top-4 h-24 w-24 rounded-full bg-white/10 blur-xl" />
           <div className="animate-float-delay absolute right-16 top-2 h-32 w-32 rounded-full bg-white/10 blur-xl" />
           <div className="absolute -right-8 -bottom-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_45%)]" />
         </div>
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-white/70">Welcome back</p>
-            <h1 className="mt-1 text-2xl font-extrabold sm:text-3xl">
+            <span className="student-portal-chip inline-flex items-center rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-white/80">
+              Student portal
+            </span>
+            <h1 className="mt-3 text-2xl font-extrabold sm:text-3xl">
               {profile?.full_name?.split(' ')[0] || 'Student'} 👋
             </h1>
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/80">
@@ -89,7 +101,7 @@ export default function Dashboard() {
       </motion.div>
 
       {/* stats */}
-      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard icon={Star} label="Total Points" value={stats.totalPoints} tone="amber" />
         <StatCard icon={Target} label="Best Score" value={`${stats.bestScore}/100`} tone="emerald" />
         <StatCard icon={Medal} label="Completed Levels" value={`${stats.completedCount}/10`} tone="sky" />
@@ -136,7 +148,7 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-        <Card className="overflow-hidden">
+        <Card className="portal-panel floating-card overflow-hidden border-0 bg-white/75">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
               <Trophy className="h-5 w-5 text-amber-500" /> Top 10 Leaderboard
@@ -168,7 +180,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card className="overflow-hidden">
+        <Card className="portal-panel floating-card overflow-hidden border-0 bg-white/75">
           <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
             <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
               <BookOpen className="h-5 w-5 text-violet-500" /> Study Notes
@@ -178,7 +190,7 @@ export default function Dashboard() {
           <div className="p-5">
             <button
               onClick={() => openLevelNotes(1)}
-              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-violet-200 bg-violet-50/80 px-3 py-3 text-left transition hover:border-violet-300 hover:bg-violet-100/80"
+              className="group flex w-full items-center justify-between gap-3 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 to-sky-50 px-3 py-3 text-left transition duration-300 hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-[0_18px_35px_-18px_rgba(124,58,237,0.45)]"
             >
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-violet-500">Lecture video</p>
@@ -195,7 +207,7 @@ export default function Dashboard() {
         <h2 className="mb-4 flex items-center gap-2 text-lg font-extrabold text-slate-900">
           <History className="h-5 w-5 text-sky-600" /> Recent Quiz History
         </h2>
-        <Card>
+        <Card className="portal-panel floating-card border-0 bg-white/75">
           {attempts.length === 0 ? (
             <EmptyState
               icon={History}
@@ -243,7 +255,7 @@ export default function Dashboard() {
         >
           <div className="space-y-4">
             <div className="rounded-2xl bg-gradient-to-r from-violet-50 to-sky-50 p-4">
-              <p className="text-sm font-semibold text-slate-500">Level {notes.level_number || '—'}</p>
+              <p className="text-sm font-semibold text-slate-500">{notes.level_number ? `Level ${notes.level_number}` : 'Overall lesson'}</p>
               <p className="mt-1 text-lg font-extrabold text-slate-900">{notes.title}</p>
               <p className="mt-2 text-sm text-slate-600">{notes.summary}</p>
             </div>
@@ -323,7 +335,7 @@ function LevelCard({ row, index, onPlay, onNotes }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, type: 'spring', stiffness: 320, damping: 26 }}
       whileHover={{ y: -7 }}
-      className={`card-lift relative overflow-hidden rounded-3xl border bg-white/90 p-5 shadow-lg backdrop-blur-sm ${
+      className={`portal-panel floating-card relative overflow-hidden rounded-[28px] border bg-white/80 p-5 shadow-[0_20px_45px_-24px_rgba(15,23,42,0.25)] backdrop-blur-sm ${
         isCurrent
           ? 'border-sky-300 ring-2 ring-sky-200 shadow-sky-200/50'
           : isUnlocked
@@ -345,9 +357,10 @@ function LevelCard({ row, index, onPlay, onNotes }) {
 
       {isCurrent && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute right-4 top-4 rounded-full bg-gradient-to-r from-sky-500 to-violet-500 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-white shadow-md shadow-sky-300/50"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+          className="level-badge-glow absolute right-4 top-4 rounded-full bg-gradient-to-r from-sky-500 to-violet-500 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white shadow-md shadow-sky-300/50"
         >
           Current
         </motion.div>
@@ -355,7 +368,7 @@ function LevelCard({ row, index, onPlay, onNotes }) {
 
       <div className="flex items-center gap-3">
         <motion.span
-          animate={isCurrent ? { scale: [1, 1.12, 1], rotate: [0, 6, 0] } : {}}
+          animate={isCurrent ? { scale: [1, 1.12, 1], rotate: [0, 6, 0] } : { scale: 1 }}
           transition={isCurrent ? { repeat: Infinity, duration: 2.2 } : {}}
           className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 text-xl shadow-md shadow-slate-200/60 ring-1 ring-slate-200/70"
         >
@@ -411,12 +424,6 @@ function LevelCard({ row, index, onPlay, onNotes }) {
           aria-label={isUnlocked && posttestAllowed ? `Start post-test for Level ${row.level_number}` : `Post-test for Level ${row.level_number} is currently disabled`}
         >
           <Play className="h-3.5 w-3.5" /> Post-test
-        </Button>
-      </div>
-
-      <div className="mt-3">
-        <Button size="sm" variant="outline" className="w-full" onClick={() => onNotes(row.level_number)}>
-          <BookOpen className="h-3.5 w-3.5" /> Lecture Notes
         </Button>
       </div>
 
