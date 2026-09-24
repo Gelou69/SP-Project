@@ -7,6 +7,7 @@ import { useAudio } from '../contexts/AudioContext'
 import { getAttempt } from '../services/quizService'
 import { Button, Card, Modal, Spinner } from '../components/ui'
 import { formatClock } from '../utils/helpers'
+import { LAW_OF_SINES_LEVELS } from '../data/lawOfSinesData'
 
 export default function Results() {
   const { attemptId } = useParams()
@@ -81,6 +82,7 @@ export default function Results() {
   const levelNumber = result.level_number || result.level?.level_number
   const title = result.level?.title || `Level ${levelNumber}`
 
+  const totalLevels = LAW_OF_SINES_LEVELS.length
   const nextLevel = levelNumber != null ? levelNumber + 1 : 2
 
   return (
@@ -143,7 +145,7 @@ export default function Results() {
                 >
                   <p className="text-lg font-extrabold text-amber-700">Perfect Score!</p>
                   <p className="mt-0.5 text-sm text-amber-700/80">
-                    {levelNumber < 10 ? `Level ${nextLevel} Unlocked! 🎉` : 'You conquered all 10 levels! Amazing!'}
+                    {levelNumber < totalLevels ? `Level ${nextLevel} Unlocked! 🎉` : `You conquered all ${totalLevels} levels! Amazing!`}
                   </p>
                 </motion.div>
               ) : (
@@ -162,7 +164,7 @@ export default function Results() {
             </div>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              {passed && levelNumber < 10 ? (
+              {passed && levelNumber < totalLevels ? (
                 <Button size="lg" className="flex-1" onClick={() => navigate(`/quiz/${nextLevel}`)}>
                   Continue to Level {nextLevel} <ArrowRight className="h-4 w-4" />
                 </Button>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Layers, CheckCircle2, LockOpen } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { LAW_OF_SINES_LEVELS } from '../../data/lawOfSinesData'
 import { listLevels, toggleLevelActive } from '../../services/adminService'
 import { useToast } from '../../contexts/ToastContext'
 import { Badge, Button, Card, PageHeader, Spinner, Toggle, cn } from '../../components/ui'
@@ -74,7 +75,7 @@ export default function AdminLevels() {
       {levels.length === 0 && (
         <Card className="p-8 text-center text-slate-400">
           <Layers className="mx-auto h-8 w-8 opacity-40" />
-          <p className="mt-2 text-sm">No levels found. Run the seed SQL to create Levels 1–10.</p>
+          <p className="mt-2 text-sm">No levels found. Run the seed SQL to create Levels 1–{LAW_OF_SINES_LEVELS.length}.</p>
           <Button className="mt-4" variant="outline" onClick={load}>Refresh</Button>
         </Card>
       )}
