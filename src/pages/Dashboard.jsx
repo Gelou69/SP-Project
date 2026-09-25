@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  Award, BookOpen, CheckCircle2, Lock, LockOpen, Play, History, Star, Target, Medal, TrendingUp, Trophy,
+  Award, BookOpen, CheckCircle2, Download, Lock, LockOpen, Play, History, Star, Target, Medal, TrendingUp, Trophy,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAudio } from '../contexts/AudioContext'
@@ -18,11 +18,75 @@ const LEVEL_EMOJI = {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { profile } = useAuth()
+  const { user, profile } = useAuth()
   const { playSfx } = useAudio()
   const { levelRows, attempts, loading, error, stats } = useStudentStats()
   const [leaderboard, setLeaderboard] = useState([])
   const [notes, setNotes] = useState(null)
+  const [certificateModal, setCertificateModal] = useState(false)
+  const [isDownloadingCertificate, setIsDownloadingCertificate] = useState(false)
+
+  const certificateName = (
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.full_name ||
+    user?.email?.split('@')[0] ||
+    'Student'
+  ).trim() || 'Student'
+  const certificateFontSize = Math.min(2.25, Math.max(0.85, 62 / certificateName.length))
+
+  const handleDownloadCertificate = async () => {
+    setIsDownloadingCertificate(true)
+
+    try {
+      const image = new Image()
+      image.crossOrigin = 'anonymous'
+      image.src = '/Certificate.png'
+
+      await new Promise((resolve, reject) => {
+        image.onload = resolve
+        image.onerror = () => reject(new Error('Certificate image failed to load'))
+      })
+
+      const canvas = document.createElement('canvas')
+      const width = 1600
+      const height = 1000
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      context.drawImage(image, 0, 0, width, height)
+
+      const centerX = width / 2
+      const nameY = 565
+      const safeName = certificateName.toUpperCase()
+      context.save()
+      context.translate(centerX, nameY)
+      context.restore()
+
+      context.textAlign = 'center'
+      context.textBaseline = 'middle'
+      context.fillStyle = '#1f2937'
+      context.shadowColor = 'rgba(0, 0, 0, 0.08)'
+      context.shadowBlur = 7
+      context.shadowOffsetY = 3
+      let fontSize = 80
+      context.font = `700 ${fontSize}px Georgia, serif`
+      while (context.measureText(safeName).width > 900 && fontSize > 28) {
+        fontSize -= 2
+        context.font = `700 ${fontSize}px Georgia, serif`
+      }
+      context.fillText(safeName, centerX, nameY)
+
+      const link = document.createElement('a')
+      link.download = `${safeName.replace(/\s+/g, '_')}-Certificate.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch (downloadError) {
+      console.error('Certificate download failed:', downloadError)
+    } finally {
+      setIsDownloadingCertificate(false)
+    }
+  }
 
   const certificateUnlocked = Array.isArray(levelRows)
     ? levelRows
@@ -129,16 +193,11 @@ export default function Dashboard() {
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button size="sm" onClick={() => window.open('/Certificate.png', '_blank', 'noopener,noreferrer')}>
+              <Button size="sm" onClick={() => setCertificateModal(true)}>
                 <Award className="h-4 w-4" /> View Certificate
               </Button>
-              <Button size="sm" variant="outline" onClick={() => {
-                const link = document.createElement('a')
-                link.href = '/Certificate.png'
-                link.download = 'Certificate.png'
-                link.click()
-              }}>
-                Download
+              <Button size="sm" variant="outline" onClick={handleDownloadCertificate} loading={isDownloadingCertificate}>
+                <Download className="h-4 w-4" /> Download
               </Button>
             </div>
           </div>
@@ -335,6 +394,39 @@ export default function Dashboard() {
           </div>
         </Modal>
       )}
+
+      <Modal
+        open={certificateModal}
+        onClose={() => setCertificateModal(false)}
+        title="Your Certificate"
+        size="xl"
+      >
+        <div className="rounded-[26px] border border-amber-200/80 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 p-3 shadow-inner shadow-amber-200/50 sm:p-5">
+          <div className="relative overflow-hidden rounded-[18px] border border-white/80 bg-white shadow-2xl shadow-amber-200/50 [container-type:inline-size]">
+            <img
+              src="/Certificate.png"
+              alt={`Certificate awarded to ${certificateName}`}
+              className="h-auto w-full"
+            />
+            <div className="pointer-events-none absolute inset-x-0 top-[47%] flex justify-center px-4 sm:px-8">
+              <span
+                className="max-w-[92%] whitespace-nowrap text-center font-serif font-black leading-none text-slate-900 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]"
+                style={{ fontSize: `min(${certificateFontSize}rem, 5cqw)` }}
+              >
+                {certificateName}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button variant="outline" size="lg" onClick={() => setCertificateModal(false)}>
+            Close
+          </Button>
+          <Button size="lg" variant="amber" onClick={handleDownloadCertificate} loading={isDownloadingCertificate}>
+            <Download className="h-4 w-4" /> Download Certificate
+          </Button>
+        </div>
+      </Modal>
     </div>
   )
 }

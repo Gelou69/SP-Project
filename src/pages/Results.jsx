@@ -8,6 +8,7 @@ import {
   Lock,
   Medal,
   RotateCcw,
+  Sparkles,
   Trophy,
   XCircle,
 } from 'lucide-react'
@@ -28,6 +29,7 @@ export default function Results() {
   const [attempt, setAttempt] = useState(location.state?.result || null)
   const [loading, setLoading] = useState(!location.state?.result)
   const [replayModal, setReplayModal] = useState(false)
+  const [certificateModal, setCertificateModal] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
 
   useEffect(() => {
@@ -56,6 +58,12 @@ export default function Results() {
   const justFinishedNonPerfect = Boolean(
     location.state?.result && !effectivePassed
   )
+  const shouldAutoOpenCertificate = Boolean(
+    !loading &&
+    location.state?.result &&
+    Number(location.state.result.score ?? location.state.result.percentage ?? 0) >= PASSING_SCORE &&
+    Number(location.state.result.level_number || location.state.result.level?.level_number) >= 5
+  )
 
   // Arriving straight from a finished quiz below the pass threshold → show the
   // required retake modal for the 80% progression rule.
@@ -64,6 +72,13 @@ export default function Results() {
       setReplayModal(true)
     }
   }, [justFinishedNonPerfect, loading])
+
+  useEffect(() => {
+    if (shouldAutoOpenCertificate) {
+      setCertificateModal(true)
+      playSfx('unlock')
+    }
+  }, [playSfx, shouldAutoOpenCertificate])
 
   if (loading) {
     return (
@@ -97,12 +112,14 @@ export default function Results() {
   const certificateLevelsRequired = Math.min(5, totalLevels)
   const nextLevel = levelNumber != null ? levelNumber + 1 : 2
   const lectureVideoUrl = 'https://youtu.be/MmfO1YgzmHI?si=MF-xBK3_Mt3KVHXd'
-  const certificateName =
+  const certificateName = (
     profile?.full_name ||
     user?.user_metadata?.full_name ||
     user?.full_name ||
     user?.email?.split('@')[0] ||
     'Student'
+  ).trim() || 'Student'
+  const certificateFontSize = Math.min(2.25, Math.max(0.85, 62 / certificateName.length))
   const isFinalAchievement = passed && levelNumber >= certificateLevelsRequired
 
   const handleDownloadCertificate = async () => {
@@ -131,16 +148,10 @@ export default function Results() {
 
       const safeName = name.toUpperCase()
       const centerX = width / 2
-      const nameY = 665
+      const nameY = 565
 
       ctx.save()
       ctx.translate(centerX, nameY)
-      ctx.shadowColor = 'rgba(245, 158, 11, 0.45)'
-      ctx.shadowBlur = 18
-      ctx.fillStyle = 'rgba(255,255,255,0.26)'
-      ctx.beginPath()
-      ctx.roundRect(-420, -38, 840, 110, 26)
-      ctx.fill()
       ctx.restore()
 
       ctx.textAlign = 'center'
@@ -149,7 +160,12 @@ export default function Results() {
       ctx.shadowColor = 'rgba(0, 0, 0, 0.08)'
       ctx.shadowBlur = 7
       ctx.shadowOffsetY = 3
-      ctx.font = safeName.length > 18 ? '700 56px Georgia, serif' : safeName.length > 12 ? '700 68px Georgia, serif' : '700 80px Georgia, serif'
+      let fontSize = 80
+      ctx.font = `700 ${fontSize}px Georgia, serif`
+      while (ctx.measureText(safeName).width > 900 && fontSize > 28) {
+        fontSize -= 2
+        ctx.font = `700 ${fontSize}px Georgia, serif`
+      }
       ctx.fillText(safeName, centerX, nameY)
 
       const link = document.createElement('a')
@@ -158,7 +174,6 @@ export default function Results() {
       link.click()
     } catch (error) {
       console.error('Certificate download failed:', error)
-      window.open('/Certificate.png', '_blank', 'noopener,noreferrer')
     } finally {
       setIsDownloading(false)
     }
@@ -259,7 +274,7 @@ export default function Results() {
                   <p className="text-sm font-black uppercase tracking-[0.24em]">Achievement unlocked</p>
                 </div>
 
-                <div className="relative overflow-hidden rounded-[22px] border border-white/70 bg-slate-900/5 p-3 shadow-inner shadow-amber-200/40">
+                  <div className="relative overflow-hidden rounded-[22px] border border-white/70 bg-slate-900/5 p-3 shadow-inner shadow-amber-200/40 [container-type:inline-size]">
                   <div
                     aria-hidden="true"
                     className="absolute inset-0"
@@ -274,18 +289,19 @@ export default function Results() {
                       alt="Achievement certificate"
                       className="h-auto w-full rounded-[18px] object-cover shadow-2xl shadow-amber-200/40"
                     />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-[30%] flex justify-center px-6">
-                      <div className="rounded-full border border-amber-300/80 bg-white/50 px-5 py-2 shadow-[0_0_24px_rgba(245,158,11,0.18)] backdrop-blur-[2px]">
-                        <span className="font-serif text-[clamp(1.2rem,3vw,2.7rem)] font-black uppercase tracking-[0.08em] text-slate-800">
-                          {certificateName}
-                        </span>
-                      </div>
+                    <div className="pointer-events-none absolute inset-x-0 top-[47%] flex justify-center px-6">
+                        <span
+                          className="max-w-[92%] whitespace-nowrap text-center font-serif font-black leading-none text-slate-900 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]"
+                          style={{ fontSize: `min(${certificateFontSize}rem, 5cqw)` }}
+                        >
+                        {certificateName}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                  <Button size="lg" className="flex-1 btn-sheen" onClick={() => window.open('/Certificate.png', '_blank', 'noopener,noreferrer')}>
+                  <Button size="lg" className="flex-1 btn-sheen" onClick={() => setCertificateModal(true)}>
                     <Download className="h-4 w-4" />
                     View Certificate
                   </Button>
@@ -353,6 +369,53 @@ export default function Results() {
           </Button>
           <Button onClick={() => navigate(`/quiz/${levelNumber}`)}>
             <RotateCcw className="h-4 w-4" /> Try Again
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={certificateModal}
+        onClose={() => setCertificateModal(false)}
+        title={isFinalAchievement ? 'Congratulations! Certificate Unlocked' : 'Your Certificate'}
+        size="xl"
+      >
+        {isFinalAchievement && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="mb-4 flex items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-100 px-4 py-3 text-center shadow-sm shadow-amber-200/60"
+          >
+            <Sparkles className="h-5 w-5 shrink-0 text-amber-500" />
+            <p className="text-sm font-extrabold text-amber-900 sm:text-base">
+              Congratulations, {certificateName}! You scored {score}/100 and completed Level 5.
+            </p>
+            <Sparkles className="h-5 w-5 shrink-0 text-amber-500" />
+          </motion.div>
+        )}
+        <div className="rounded-[26px] border border-amber-200/80 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 p-3 shadow-inner shadow-amber-200/50 sm:p-5">
+          <div className="relative overflow-hidden rounded-[18px] border border-white/80 bg-white shadow-2xl shadow-amber-200/50 [container-type:inline-size]">
+            <img
+              src="/Certificate.png"
+              alt={`Certificate awarded to ${certificateName}`}
+              className="h-auto w-full"
+            />
+            <div className="pointer-events-none absolute inset-x-0 top-[47%] flex justify-center px-4 sm:px-8">
+                <span
+                  className="max-w-[92%] whitespace-nowrap text-center font-serif font-black leading-none text-slate-900 drop-shadow-[0_1px_1px_rgba(255,255,255,0.8)]"
+                  style={{ fontSize: `min(${certificateFontSize}rem, 5cqw)` }}
+                >
+                {certificateName}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <Button variant="outline" size="lg" onClick={() => setCertificateModal(false)}>
+            Close
+          </Button>
+          <Button size="lg" variant="amber" onClick={handleDownloadCertificate} loading={isDownloading}>
+            <Download className="h-4 w-4" />
+            Download Certificate
           </Button>
         </div>
       </Modal>
