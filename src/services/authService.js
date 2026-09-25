@@ -151,25 +151,13 @@ async function resolveCanonicalUsername(username) {
 }
 
 export async function signUp({ fullName, username: requestedUsername, birthdate, password }) {
+  if (!isSupabaseConfigured) {
+    throw new Error('Authentication is not configured. Please add your Supabase credentials to the environment and restart the app.')
+  }
+
   const normalized = normalizeUsername(requestedUsername)
   if (!/^[a-z0-9]+\.[a-z0-9]+$/.test(normalized)) {
     throw new Error('Username must use the format lastname.firstname.')
-  }
-
-  if (!isSupabaseConfigured) {
-    const existing = findDemoUserByUsername(normalized)
-    if (existing) {
-      throw new Error('That username is already in use.')
-    }
-
-    const user = createDemoUser({
-      fullName,
-      username: normalized,
-      birthdate,
-      password,
-    })
-    setCurrentDemoUser(user.id)
-    return { user: { id: user.id }, profile: user }
   }
 
   const username = normalized
@@ -260,43 +248,7 @@ async function ensureProfileExists({ userId, fullName, username, birthdate }) {
 
 export async function signIn({ username, password }) {
   if (!isSupabaseConfigured) {
-    const raw = String(username || '').trim()
-    if (!raw) throw new Error('Please enter your username.')
-
-    const typed = normalizeUsername(raw)
-    const legacyAdminPasswords = ['admin123', 'lawofsines123']
-    const adminMatches = demoUsernameVariants(raw).filter((value) => ['sammy.malik', 'admin.lawofsines'].includes(value))
-
-    if (adminMatches.length > 0 && legacyAdminPasswords.includes(String(password || ''))) {
-      const adminUser = {
-        id: 'demo-admin',
-        full_name: 'Sammy Malik',
-        username: 'sammy.malik',
-        password: 'admin123',
-        birthdate: '1998-01-15',
-        role: 'admin',
-        account_status: 'active',
-        created_at: new Date().toISOString(),
-      }
-      const state = getDemoState()
-      state.users = state.users.filter((user) => user.id !== 'demo-admin' && user.username.toLowerCase() !== 'admin.lawofsines')
-      state.users.unshift(adminUser)
-      saveDemoState(state)
-      setCurrentDemoUser(adminUser.id)
-      return { user: { id: adminUser.id }, profile: adminUser }
-    }
-
-    const state = getDemoState()
-    const matchingUser = state.users.find((user) => {
-      const userNames = demoUsernameVariants(user.username)
-      const entered = demoUsernameVariants(raw)
-      return userNames.some((name) => entered.includes(name)) && user.password === String(password || '')
-    })
-
-    if (!matchingUser) throw new Error('Invalid username or password.')
-
-    setCurrentDemoUser(matchingUser.id)
-    return { user: { id: matchingUser.id }, profile: matchingUser }
+    throw new Error('Authentication is not configured. Please add your Supabase credentials to the environment and restart the app.')
   }
 
   const rawInput = String(username || '').trim()

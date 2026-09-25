@@ -84,12 +84,17 @@ export default function Login() {
             autoComplete="current-password"
             required
           />
+          {!isSupabaseConfigured && (
+            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800">
+              Authentication is not configured yet. Add your Supabase environment variables to enable login.
+            </p>
+          )}
           {error && (
             <p role="alert" className="rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 ring-1 ring-rose-200">
               {error}
             </p>
           )}
-          <Button type="submit" className="w-full" size="lg" loading={loading}>
+          <Button type="submit" className="w-full" size="lg" loading={loading} disabled={!isSupabaseConfigured}>
             <LogIn className="h-4 w-4" /> Sign In
           </Button>
           <p className="text-center text-sm text-slate-500">

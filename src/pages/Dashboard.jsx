@@ -24,6 +24,12 @@ export default function Dashboard() {
   const [leaderboard, setLeaderboard] = useState([])
   const [notes, setNotes] = useState(null)
 
+  const certificateUnlocked = Array.isArray(levelRows)
+    ? levelRows
+        .filter((row) => Number(row.level_number) <= 5)
+        .every((row) => Boolean(row.progress?.is_completed))
+    : false
+
   useEffect(() => {
     getLeaderboard(10)
       .then((rows) => setLeaderboard(rows))
@@ -104,6 +110,40 @@ export default function Dashboard() {
         <StatCard icon={Medal} label="Completed Levels" value={`${stats.completedCount}/${stats.totalLevels}`} tone="sky" />
         <StatCard icon={History} label="Quiz Attempts" value={stats.attemptsCount} tone="violet" />
       </div>
+
+      {certificateUnlocked && (
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="overflow-hidden rounded-[28px] border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 p-4 shadow-[0_22px_48px_-28px_rgba(245,158,11,0.8)]"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/70 text-amber-600 shadow-sm ring-1 ring-amber-200">
+                <Medal className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.26em] text-amber-700">Achievement</p>
+                <h3 className="text-lg font-extrabold text-slate-900">Certificate unlocked</h3>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button size="sm" onClick={() => window.open('/Certificate.png', '_blank', 'noopener,noreferrer')}>
+                <Award className="h-4 w-4" /> View Certificate
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => {
+                const link = document.createElement('a')
+                link.href = '/Certificate.png'
+                link.download = 'Certificate.png'
+                link.click()
+              }}>
+                Download
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {error && (
         <p role="alert" className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700 ring-1 ring-rose-200">

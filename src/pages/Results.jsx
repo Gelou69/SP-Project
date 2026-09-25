@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, CheckCircle2, Lock, RotateCcw, Trophy, XCircle } from 'lucide-react'
+import {
+  ArrowRight,
+  CheckCircle2,
+  Download,
+  Lock,
+  Medal,
+  RotateCcw,
+  Trophy,
+  XCircle,
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAudio } from '../contexts/AudioContext'
 import { getAttempt, PASSING_SCORE } from '../services/quizService'
@@ -13,12 +22,13 @@ export default function Results() {
   const { attemptId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { playSfx } = useAudio()
 
   const [attempt, setAttempt] = useState(location.state?.result || null)
   const [loading, setLoading] = useState(!location.state?.result)
   const [replayModal, setReplayModal] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   useEffect(() => {
     if (attemptId && !location.state?.result) {
@@ -84,8 +94,75 @@ export default function Results() {
   const title = result.level?.title || `Level ${levelNumber}`
 
   const totalLevels = LAW_OF_SINES_LEVELS.length
+  const certificateLevelsRequired = Math.min(5, totalLevels)
   const nextLevel = levelNumber != null ? levelNumber + 1 : 2
   const lectureVideoUrl = 'https://youtu.be/MmfO1YgzmHI?si=MF-xBK3_Mt3KVHXd'
+  const certificateName =
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.full_name ||
+    user?.email?.split('@')[0] ||
+    'Student'
+  const isFinalAchievement = passed && levelNumber >= certificateLevelsRequired
+
+  const handleDownloadCertificate = async () => {
+    const name = (certificateName || 'Student').trim() || 'Student'
+    setIsDownloading(true)
+
+    try {
+      const image = new Image()
+      image.crossOrigin = 'anonymous'
+      image.src = '/Certificate.png'
+
+      await new Promise((resolve, reject) => {
+        image.onload = resolve
+        image.onerror = () => reject(new Error('Certificate image failed to load'))
+      })
+
+      const canvas = document.createElement('canvas')
+      const width = 1600
+      const height = 1000
+      canvas.width = width
+      canvas.height = height
+
+      const ctx = canvas.getContext('2d')
+      ctx.clearRect(0, 0, width, height)
+      ctx.drawImage(image, 0, 0, width, height)
+
+      const safeName = name.toUpperCase()
+      const centerX = width / 2
+      const nameY = 665
+
+      ctx.save()
+      ctx.translate(centerX, nameY)
+      ctx.shadowColor = 'rgba(245, 158, 11, 0.45)'
+      ctx.shadowBlur = 18
+      ctx.fillStyle = 'rgba(255,255,255,0.26)'
+      ctx.beginPath()
+      ctx.roundRect(-420, -38, 840, 110, 26)
+      ctx.fill()
+      ctx.restore()
+
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = '#1f2937'
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.08)'
+      ctx.shadowBlur = 7
+      ctx.shadowOffsetY = 3
+      ctx.font = safeName.length > 18 ? '700 56px Georgia, serif' : safeName.length > 12 ? '700 68px Georgia, serif' : '700 80px Georgia, serif'
+      ctx.fillText(safeName, centerX, nameY)
+
+      const link = document.createElement('a')
+      link.download = `${safeName.trim().replace(/\s+/g, '_')}-Certificate.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch (error) {
+      console.error('Certificate download failed:', error)
+      window.open('/Certificate.png', '_blank', 'noopener,noreferrer')
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   return (
     <div className="mx-auto max-w-xl py-6">
@@ -161,11 +238,63 @@ export default function Results() {
                 >
                   <p className="text-lg font-extrabold text-slate-700">Level Locked</p>
                   <p className="mt-0.5 text-sm text-slate-500">
-                    You need a {PASSING_SCORE}/100 score to unlock the next level.
+                    Complete the level and get 80+ average score to unlock the certificate.
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-slate-500">
+                    You need a {PASSING_SCORE}/100 score to continue.
                   </p>
                 </motion.div>
               )}
             </div>
+
+            {isFinalAchievement && (
+              <motion.div
+                initial={{ opacity: 0, y: 22, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className="mt-7 overflow-hidden rounded-[28px] border border-amber-200/80 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-100 p-4 shadow-[0_25px_60px_-25px_rgba(245,158,11,0.7)]"
+              >
+                <div className="mb-3 flex items-center justify-center gap-2 text-amber-700">
+                  <Medal className="h-5 w-5" />
+                  <p className="text-sm font-black uppercase tracking-[0.24em]">Achievement unlocked</p>
+                </div>
+
+                <div className="relative overflow-hidden rounded-[22px] border border-white/70 bg-slate-900/5 p-3 shadow-inner shadow-amber-200/40">
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        'radial-gradient(circle at top, rgba(251,191,36,0.3), transparent 42%), radial-gradient(circle at bottom, rgba(14,165,233,0.18), transparent 48%)',
+                    }}
+                  />
+                  <div className="relative">
+                    <img
+                      src="/Certificate.png"
+                      alt="Achievement certificate"
+                      className="h-auto w-full rounded-[18px] object-cover shadow-2xl shadow-amber-200/40"
+                    />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-[30%] flex justify-center px-6">
+                      <div className="rounded-full border border-amber-300/80 bg-white/50 px-5 py-2 shadow-[0_0_24px_rgba(245,158,11,0.18)] backdrop-blur-[2px]">
+                        <span className="font-serif text-[clamp(1.2rem,3vw,2.7rem)] font-black uppercase tracking-[0.08em] text-slate-800">
+                          {certificateName}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <Button size="lg" className="flex-1 btn-sheen" onClick={() => window.open('/Certificate.png', '_blank', 'noopener,noreferrer')}>
+                    <Download className="h-4 w-4" />
+                    View Certificate
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={handleDownloadCertificate}>
+                    {isDownloading ? 'Preparing...' : 'Download'}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               {passed && levelNumber < totalLevels ? (

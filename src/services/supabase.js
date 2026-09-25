@@ -20,7 +20,7 @@ export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey)
 
 if (!isSupabaseConfigured && typeof console !== 'undefined') {
   console.warn(
-    'Supabase is not configured in this environment. The app will use demo mode until VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or the publishable alias) are added in Vercel.'
+    'Supabase is not configured in this environment. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or the publishable alias) before using login/signup.'
   )
 }
 
