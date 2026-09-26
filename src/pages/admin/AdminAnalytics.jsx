@@ -32,6 +32,7 @@ export default function AdminAnalytics() {
 
   const avgData = levels.map((l) => ({ name: `L${l.level_number}`, score: l.avg_score ?? 0 }))
   const passData = levels.map((l) => ({ name: `L${l.level_number}`, pass: l.pass_rate ?? 0 }))
+  const hasAttempts = levels.some((level) => Number(level.attempts) > 0)
   const hardest = questions.filter((q) => (q.accuracy ?? 100) < 100).slice(0, 10)
 
   return (
@@ -57,37 +58,49 @@ export default function AdminAnalytics() {
       </div>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="min-w-0">
           <CardHeader title="Average Score per Level" subtitle="Mean attempt score out of 100" />
-          <div className="h-72 px-4 py-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={avgData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} />
-                <Tooltip />
-                <Bar dataKey="score" name="Avg score" radius={[6, 6, 0, 0]}>
-                  {avgData.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {hasAttempts ? (
+            <div className="h-72 min-w-0 px-4 py-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={avgData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <Tooltip />
+                  <Bar dataKey="score" name="Avg score" radius={[6, 6, 0, 0]}>
+                    {avgData.map((e, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex h-72 items-center justify-center px-6 text-center text-sm text-slate-500">
+              Average scores will appear here after students submit a quiz.
+            </div>
+          )}
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <CardHeader title="Pass Rate Trend" subtitle="Pass-rate percentage per level (80/100+)" />
-          <div className="h-72 px-4 py-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={passData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="pass" name="Pass rate %" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {hasAttempts ? (
+            <div className="h-72 min-w-0 px-4 py-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={passData} margin={{ top: 10, right: 10, left: -22, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <Tooltip />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="pass" name="Pass rate %" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex h-72 items-center justify-center px-6 text-center text-sm text-slate-500">
+              Pass rates will appear here after students submit a quiz.
+            </div>
+          )}
         </Card>
       </div>
 
