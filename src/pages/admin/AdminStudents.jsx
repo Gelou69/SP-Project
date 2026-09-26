@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Users, Ban, ShieldCheck, Trash2, ChevronRight, Star } from 'lucide-react'
+import { Search, Users, Ban, ShieldCheck, Trash2, ChevronRight, Star, Download } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { listStudents, setStudentStatus, deleteStudent } from '../../services/adminService'
+import { getStudentLevelSummaries, listStudents, setStudentStatus, deleteStudent } from '../../services/adminService'
 import { useToast } from '../../contexts/ToastContext'
 import { Badge, Button, Card, ConfirmDialog, EmptyState, Input, PageHeader, Select, Spinner } from '../../components/ui'
 import { calculateAge, formatDate, initials } from '../../utils/helpers'
+import { LAW_OF_SINES_LEVELS } from '../../data/lawOfSinesData'
 
 export default function AdminStudents() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const [students, setStudents] = useState([])
+  const [levelSummaries, setLevelSummaries] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
@@ -20,7 +22,10 @@ export default function AdminStudents() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      setStudents(await listStudents({ search, status }))
+      const nextStudents = await listStudents({ search, status })
+      const nextSummaries = await getStudentLevelSummaries(nextStudents.map((student) => student.id))
+      setStudents(nextStudents)
+      setLevelSummaries(nextSummaries)
       setError('')
     } catch (err) {
       setError(err.message)
@@ -67,6 +72,39 @@ export default function AdminStudents() {
       showToast({ type: 'error', title: 'Delete failed', message: err.message })
       setConfirm(null)
     }
+  }
+
+  const getSummaryScores = (student) => LAW_OF_SINES_LEVELS.map((level) => {
+    const entry = levelSummaries[student.id]?.[level.level_number]
+    return entry?.attempts > 0 ? entry.score : null
+  })
+
+  const getSummaryRemark = (student) => {
+    const scores = getSummaryScores(student).filter((score) => score !== null)
+    if (scores.length === 0) return 'NOT STARTED'
+    const average = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+    return `${average} ${average >= 80 ? 'PASSED' : 'NOT PASSED'}`
+  }
+
+  const downloadSummary = () => {
+    const escapeCsv = (value) => {
+      const safeValue = /^[=+\-@\t\r]/.test(String(value)) ? `'${value}` : value
+      return `"${String(safeValue ?? '').replace(/"/g, '""')}"`
+    }
+    const headers = ['Full name', ...LAW_OF_SINES_LEVELS.map((level) => `lvl ${level.level_number}`), 'Remark']
+    const rows = students.map((student) => [
+      student.full_name,
+      ...getSummaryScores(student).map((score) => score ?? ''),
+      getSummaryRemark(student),
+    ])
+    const csv = [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\r\n')
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'student-level-summary.csv'
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -170,6 +208,46 @@ export default function AdminStudents() {
                       </div>
                     </td>
                   </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+
+      <Card className="mt-6 overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+          <div>
+            <h2 className="text-base font-bold text-slate-900">Student Level Summary</h2>
+            <p className="mt-0.5 text-xs text-slate-500">Best score by level · pass mark: 80 average</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={downloadSummary} disabled={loading || students.length === 0}>
+            <Download className="h-4 w-4" /> Download CSV
+          </Button>
+        </div>
+        {loading ? (
+          <Spinner label="Building student summary..." />
+        ) : students.length === 0 ? (
+          <p className="p-6 text-center text-sm text-slate-500">No student results to summarize.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-center text-sm">
+              <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-5 py-3 text-left">Full name</th>
+                  {LAW_OF_SINES_LEVELS.map((level) => <th key={level.level_number} className="px-4 py-3">lvl {level.level_number}</th>)}
+                  <th className="px-5 py-3">Remark</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {students.map((student) => (
+                  <tr key={student.id} className="hover:bg-slate-50/60">
+                    <td className="px-5 py-3 text-left font-medium text-slate-800">{student.full_name}</td>
+                    {getSummaryScores(student).map((score, index) => (
+                      <td key={LAW_OF_SINES_LEVELS[index].level_number} className="px-4 py-3 text-slate-700">{score ?? '—'}</td>
+                    ))}
+                    <td className="px-5 py-3 font-semibold text-slate-700">{getSummaryRemark(student)}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
