@@ -62,7 +62,43 @@ export async function getStudentProgress(studentId) {
     .eq('student_id', studentId)
     .order('level_number', { foreignTable: 'level' })
   if (error) throw new Error(error.message)
-  return data || []
+  return (data || []).map((entry) => ({
+    ...entry,
+    is_completed: Boolean(entry.is_completed) || Number(entry.best_score || 0) >= 80,
+  }))
+}
+
+export async function getStudentLevelSummaries(studentIds = []) {
+  const summaries = Object.fromEntries(studentIds.map((studentId) => [studentId, {}]))
+  if (studentIds.length === 0) return summaries
+
+  let progress
+  if (!isSupabaseConfigured) {
+    progress = studentIds.flatMap((studentId) =>
+      getLevelProgressForDemoUser(studentId).map((entry) => ({
+        ...entry,
+        level: { level_number: entry.level_number },
+      }))
+    )
+  } else {
+    const { data, error } = await supabase
+      .from('student_progress')
+      .select('student_id, best_score, attempts, level:levels(level_number)')
+      .in('student_id', studentIds)
+    if (error) throw new Error(error.message)
+    progress = data || []
+  }
+
+  for (const entry of progress) {
+    const levelNumber = Number(entry.level?.level_number || entry.level_number)
+    if (!summaries[entry.student_id] || !levelNumber) continue
+    summaries[entry.student_id][levelNumber] = {
+      score: Number(entry.best_score || 0),
+      attempts: Number(entry.attempts || 0),
+    }
+  }
+
+  return summaries
 }
 
 export async function getStudentAttempts(studentId) {
@@ -258,17 +294,68 @@ export async function setLevelAssessmentAccess(levelId, assessmentType, isEnable
 export async function getAnalyticsOverview() {
   if (!isSupabaseConfigured) return getDemoAnalyticsOverview()
 
-  const { data, error } = await supabase.from('analytics_overview').select('*').limit(1)
-  if (error) throw new Error(error.message)
-  return data?.[0] || {}
+  const [students, attempts] = await Promise.all([
+    fetchAllRows(() => supabase.from('profiles').select('id, account_status').eq('role', 'student').order('id', { ascending: true })),
+    fetchAllRows(() => supabase.from('quiz_attempts').select('id, student_id, score, correct_answers, total_questions').order('id', { ascending: true })),
+  ])
+  const passedStudents = new Set(
+    attempts.filter((attempt) => Number(attempt.score || 0) >= 80).map((attempt) => attempt.student_id)
+  )
+  const startedStudents = new Set(attempts.map((attempt) => attempt.student_id))
+  const average = (values) => values.length
+    ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 10) / 10
+    : 0
+
+  return {
+    total_students: students.length,
+    active_students: students.filter((student) => student.account_status === 'active').length,
+    students_started: startedStudents.size,
+    students_completed: passedStudents.size,
+    total_attempts: attempts.length,
+    average_score: average(attempts.map((attempt) => Number(attempt.score || 0))),
+    completion_rate: average(attempts.map((attempt) => {
+      const total = Number(attempt.total_questions || 0)
+      return total ? Number(attempt.correct_answers || 0) / total * 100 : 0
+    })),
+  }
 }
 
 export async function getAnalyticsLevels() {
   if (!isSupabaseConfigured) return getDemoAnalyticsByLevel()
 
-  const { data, error } = await supabase.from('analytics_levels').select('*')
+  const [{ data: levels, error }, attempts] = await Promise.all([
+    supabase.from('levels').select('id, level_number, title').order('level_number', { ascending: true }),
+    fetchAllRows(() => supabase.from('quiz_attempts').select('id, student_id, level_id, score').order('id', { ascending: true })),
+  ])
   if (error) throw new Error(error.message)
-  return data || []
+
+  return (levels || []).map((level) => {
+    const levelAttempts = attempts.filter((attempt) => attempt.level_id === level.id)
+    const passedAttempts = levelAttempts.filter((attempt) => Number(attempt.score || 0) >= 80)
+    const averageScore = levelAttempts.length
+      ? levelAttempts.reduce((sum, attempt) => sum + Number(attempt.score || 0), 0) / levelAttempts.length
+      : 0
+    return {
+      level_number: level.level_number,
+      title: level.title,
+      attempts: levelAttempts.length,
+      students_attempted: new Set(levelAttempts.map((attempt) => attempt.student_id)).size,
+      students_completed: new Set(passedAttempts.map((attempt) => attempt.student_id)).size,
+      avg_score: Math.round(averageScore * 10) / 10,
+      pass_rate: levelAttempts.length ? Math.round(passedAttempts.length / levelAttempts.length * 1000) / 10 : 0,
+    }
+  })
+}
+
+async function fetchAllRows(createQuery) {
+  const pageSize = 1000
+  const rows = []
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await createQuery().range(offset, offset + pageSize - 1)
+    if (error) throw new Error(error.message)
+    rows.push(...(data || []))
+    if (!data || data.length < pageSize) return rows
+  }
 }
 
 export async function getAnalyticsQuestions() {
