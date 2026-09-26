@@ -957,7 +957,7 @@ select * from (
     (select count(*) from public.profiles where role = 'student') as total_students,
     (select count(*) from public.profiles where role = 'student' and account_status = 'active') as active_students,
     (select count(distinct student_id) from public.quiz_attempts) as students_started,
-    (select count(distinct student_id) from public.student_progress where is_completed = true) as students_completed,
+    (select count(distinct student_id) from public.quiz_attempts where score >= 80) as students_completed,
     (select count(*) from public.quiz_attempts) as total_attempts,
     (select coalesce(round(avg(score)::numeric, 1), 0) from public.quiz_attempts) as average_score,
     (select coalesce(round(avg(correct_answers::numeric / nullif(total_questions,0)) * 100, 1), 0) from public.quiz_attempts) as completion_rate
@@ -965,19 +965,28 @@ select * from (
 where public.is_admin();
 
 create or replace view public.analytics_levels with (security_invoker = true) as
+with attempt_summary as (
+  select
+    a.level_id,
+    count(*) as attempts,
+    count(distinct a.student_id) as students_attempted,
+    count(distinct a.student_id) filter (where a.score >= 80) as students_completed,
+    round(avg(a.score)::numeric, 1) as avg_score,
+    round(count(*) filter (where a.score >= 80)::numeric / nullif(count(*), 0) * 100, 1) as pass_rate
+  from public.quiz_attempts a
+  group by a.level_id
+)
 select * from (
   select
     l.level_number,
     l.title,
-    count(distinct a.student_id) filter (where a.id is not null) as students_attempted,
-    count(distinct sp.student_id) filter (where sp.is_completed) as students_completed,
-    count(a.id) as attempts,
-    coalesce(round(avg(a.score)::numeric, 1), 0) as avg_score,
-    coalesce(round(count(*) filter (where a.passed)::numeric / nullif(count(*), 0) * 100, 1), 0) as pass_rate
+    coalesce(s.students_attempted, 0) as students_attempted,
+    coalesce(s.students_completed, 0) as students_completed,
+    coalesce(s.attempts, 0) as attempts,
+    coalesce(s.avg_score, 0) as avg_score,
+    coalesce(s.pass_rate, 0) as pass_rate
   from public.levels l
-  left join public.quiz_attempts a on a.level_id = l.id
-  left join public.student_progress sp on sp.level_id = l.id
-  group by l.id, l.level_number, l.title
+  left join attempt_summary s on s.level_id = l.id
   order by l.level_number
 ) _lv
 where public.is_admin();
