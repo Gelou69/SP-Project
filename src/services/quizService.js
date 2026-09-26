@@ -88,7 +88,7 @@ export function ensureDefaultUnlockedProgress(levels = [], progress = []) {
 
     if (existing) {
       existing.is_unlocked = unlocked
-      existing.is_completed = Boolean(existing.is_completed)
+      existing.is_completed = Boolean(existing.is_completed) || Number(existing.best_score || 0) >= PASSING_SCORE
       if (existing.level_number == null) existing.level_number = levelNumber
       if (existing.level_id == null) existing.level_id = levelId
       continue
