@@ -224,14 +224,17 @@ export function getDemoAnalyticsOverview() {
     ? Math.round(attempts.reduce((sum, attempt) => sum + Number(attempt.score || 0), 0) / attempts.length)
     : 0
   const completionRate = attempts.length
-    ? Math.round((attempts.filter((attempt) => Number(attempt.passed || 0) === 1).length / attempts.length) * 100)
+    ? Math.round((attempts.filter((attempt) => Number(attempt.score || 0) >= 80).length / attempts.length) * 100)
     : 0
+  const passedStudents = new Set(
+    attempts.filter((attempt) => Number(attempt.score || 0) >= 80).map((attempt) => attempt.student_id)
+  )
 
   return {
     total_students: totalStudents,
     active_students: totalStudents,
     students_started: totalStudents,
-    students_completed: state.attempts.filter((attempt) => Number(attempt.passed || 0) === 1).length,
+    students_completed: passedStudents.size,
     total_attempts: attempts.length,
     average_score: avgScore,
     completion_rate: completionRate,
@@ -245,8 +248,9 @@ export function getDemoAnalyticsByLevel() {
     const avgScore = attempts
       ? Math.round(levelAttempts.reduce((sum, attempt) => sum + Number(attempt.score || 0), 0) / attempts)
       : 0
+    const passedAttempts = levelAttempts.filter((attempt) => Number(attempt.score || 0) >= 80)
     const passRate = attempts
-      ? Math.round((levelAttempts.filter((attempt) => Number(attempt.passed || 0) === 1).length / attempts) * 100)
+      ? Math.round((passedAttempts.length / attempts) * 100)
       : 0
 
     return {
@@ -254,7 +258,7 @@ export function getDemoAnalyticsByLevel() {
       title: level.title,
       attempts,
       students_attempted: new Set(levelAttempts.map((attempt) => attempt.student_id)).size,
-      students_completed: levelAttempts.filter((attempt) => Number(attempt.passed || 0) === 1).length,
+      students_completed: new Set(passedAttempts.map((attempt) => attempt.student_id)).size,
       avg_score: avgScore,
       pass_rate: passRate,
     }
